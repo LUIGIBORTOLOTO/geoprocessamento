@@ -66,6 +66,10 @@
         select, input[type="text"], input[type="number"], textarea { width: 100%; padding: 12px; background-color: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: #fff; font-size: 13px; font-family: inherit; box-sizing: border-box; outline: none; transition: 0.2s;}
         select:focus, input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
         
+        /* Estilos extras para Optgroups no Select */
+        optgroup { background: var(--bg-panel); color: var(--accent); font-weight: bold; font-style: normal; }
+        option { background: var(--bg-dark); color: #fff; padding: 5px; }
+
         .form-row { display: flex; gap: 12px; }
         .form-row > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 
@@ -179,22 +183,21 @@
         <div id="aba-camadas" class="tab-content">
             
             <div class="card" style="background: rgba(59, 130, 246, 0.05); border-color: var(--accent);">
-                <label style="color: var(--accent);">🏛️ Bases Municipais (Download Direto)</label>
+                <label style="color: var(--accent);">🏛️ Bases Municipais na Nuvem</label>
                 <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 10px 0; line-height: 1.4;">
-                    Bases carregadas diretamente do servidor GitHub.
+                    Selecione a cidade e o arquivo que deseja carregar:
                 </p>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    
-                    <button class="btn btn-primary" style="flex: 1; font-size: 11px; padding: 8px;" 
-                        onclick="carregarBaseDaInternet('https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/Lotes_Contagem.zip', 'Lotes_Contagem.zip')">
-                        🏙️ Lotes
-                    </button>
+                
+                <select id="select-bases-nuvem" style="margin-bottom: 10px;">
+                    <optgroup label="📍 Contagem - RMBH">
+                        <option value="https://github.com/LUIGIBORTOLOTO/geoprocessamento/releases/download/v1.0/Lote_urbanistico.zip">🏙️ Lotes Urbanísticos</option>
+                        </optgroup>
 
-                    <button class="btn btn-primary" style="flex: 1; font-size: 11px; padding: 8px;" 
-                        onclick="carregarBaseDaInternet('https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/Quadras_Contagem.zip', 'Quadras_Contagem.zip')">
-                        🔲 Quadras
-                    </button>
-                </div>
+                    <optgroup label="📍 Igarapé - RMBH">
+                        </optgroup>
+                </select>
+
+                <button class="btn btn-primary btn-block" onclick="baixarBaseSelecionada()">☁️ Carregar Base Selecionada</button>
             </div>
 
             <div class="card">
@@ -261,7 +264,7 @@
             </div>
             
             <div style="margin-top: auto; text-align: center; border-top: 1px solid var(--border); padding-top: 15px;">
-                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">GeoPonto WebGIS v7.2 | Integração GitHub</p>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">GeoPonto WebGIS v7.3 | Integração GitHub Modular</p>
             </div>
         </div>
     </aside>
@@ -302,26 +305,36 @@
             btn.classList.add('active');
         }
 
-        // --- FUNÇÃO PARA PUXAR O FICHEIRO DIRETO DO GITHUB ---
+        // --- NOVA FUNÇÃO PARA O MENU SUSPENSO ---
+        function baixarBaseSelecionada() {
+            var select = document.getElementById('select-bases-nuvem');
+            var url = select.value;
+            if(!url) { alert("Selecione um arquivo válido."); return; }
+            
+            // Pega o texto do botão (ex: "Lotes Urbanísticos") e cria um nome de ficheiro
+            var nomeText = select.options[select.selectedIndex].text;
+            var nomeLimpo = nomeText.replace(/[^\w\sÀ-ú]/g, '').trim().replace(/\s+/g, '_') + '.zip';
+            
+            carregarBaseDaInternet(url, nomeLimpo);
+        }
+
         async function carregarBaseDaInternet(urlDownload, nomeArquivoVisivel) {
             var loading = document.getElementById('loading-shp');
             loading.style.display = 'block';
-            loading.innerText = `⏳ A transferir a base ${nomeArquivoVisivel} do GitHub...`;
+            loading.innerText = `⏳ A transferir a base do GitHub. Por ser um arquivo detalhado, pode demorar alguns segundos...`;
 
             try {
                 let response = await fetch(urlDownload);
-                
-                if (!response.ok) {
-                    throw new Error("Não foi possível aceder ao ficheiro no GitHub. Verifique se o link Raw está correto.");
-                }
+                if (!response.ok) throw new Error("Não foi possível aceder ao ficheiro no GitHub.");
                 
                 let blob = await response.blob();
                 let ficheiroVirtual = new File([blob], nomeArquivoVisivel, { type: "application/zip" });
-                
                 let eventoFalso = { target: { files: [ficheiroVirtual] } };
                 
-                loading.innerText = `⏳ Ficheiro recebido! A processar os polígonos no mapa...`;
-                importarShapefile(eventoFalso);
+                loading.innerText = `⏳ Download concluído! Descompactando e processando geometria no mapa...`;
+                
+                // Pequeno atraso para o navegador atualizar o texto da tela antes de travar com o processamento pesado
+                setTimeout(() => { importarShapefile(eventoFalso); }, 100);
                 
             } catch (error) {
                 alert("Erro ao tentar carregar a base predefinida:\n\n" + error.message);
@@ -558,7 +571,7 @@
             
             if (focarMapa) { map.fitBounds(novaCamada.getBounds()); }
             
-            gerenciadorCamadas.push({ id: idNovaCamada, nome: nomeOriginal, leafletLayer: novaCamada, visivel: true, tipo: 'shp', cor: defaultColor, rawGeoJSON: geojson });
+            gerenciadorCamadas.push({ id: idNovaCamada, nome: "☁️ " + nomeOriginal, leafletLayer: novaCamada, visivel: true, tipo: 'shp', cor: defaultColor, rawGeoJSON: geojson });
             renderizarGestorCamadas();
             document.getElementById('loading-shp').style.display = 'none';
         }
@@ -571,9 +584,9 @@
             var fileNameStr = file.name.toLowerCase();
 
             if (fileNameStr.endsWith('.shp')) {
-                reader.onload = async (e) => { try { const geojsonArray = shp.parseShp(e.target.result); let features = geojsonArray.map(geom => ({ type: "Feature", properties: {}, geometry: geom })); processarGeoJSON_NoMapa({ type: "FeatureCollection", features: features }, "🧩 " + file.name, null, true); } catch (err) { alert("Erro ao processar o .shp."); document.getElementById('loading-shp').style.display = 'none'; } }; reader.readAsArrayBuffer(file);
+                reader.onload = async (e) => { try { const geojsonArray = shp.parseShp(e.target.result); let features = geojsonArray.map(geom => ({ type: "Feature", properties: {}, geometry: geom })); processarGeoJSON_NoMapa({ type: "FeatureCollection", features: features }, file.name, null, true); } catch (err) { alert("Erro ao processar o .shp."); document.getElementById('loading-shp').style.display = 'none'; } }; reader.readAsArrayBuffer(file);
             } else if (fileNameStr.endsWith('.zip')) {
-                reader.onload = async (e) => { try { let geojson = await shp(e.target.result); processarGeoJSON_NoMapa(geojson, "📦 " + file.name, null, true); } catch (err) { alert("Erro ao ler o .zip."); document.getElementById('loading-shp').style.display = 'none'; } }; reader.readAsArrayBuffer(file);
+                reader.onload = async (e) => { try { let geojson = await shp(e.target.result); processarGeoJSON_NoMapa(geojson, file.name, null, true); } catch (err) { alert("Erro ao ler o .zip."); document.getElementById('loading-shp').style.display = 'none'; } }; reader.readAsArrayBuffer(file);
             } else if (fileNameStr.endsWith('.kmz')) {
                 reader.onload = async (e) => {
                     try {
@@ -582,18 +595,18 @@
                         if (!kmlFileName) throw new Error("Ficheiro KML não encontrado no KMZ.");
                         var kmlText = await zip.files[kmlFileName].async("text");
                         var kmlDom = new DOMParser().parseFromString(kmlText, 'text/xml');
-                        processarGeoJSON_NoMapa(toGeoJSON.kml(kmlDom), "🌍 " + file.name, null, true);
+                        processarGeoJSON_NoMapa(toGeoJSON.kml(kmlDom), file.name, null, true);
                     } catch (err) { alert("Erro ao processar .kmz."); document.getElementById('loading-shp').style.display = 'none'; }
                 }; reader.readAsArrayBuffer(file);
             } else if (fileNameStr.endsWith('.kml')) {
                 reader.onload = (e) => {
                     try {
                         var kmlDom = new DOMParser().parseFromString(e.target.result, 'text/xml');
-                        processarGeoJSON_NoMapa(toGeoJSON.kml(kmlDom), "🌍 " + file.name, null, true);
+                        processarGeoJSON_NoMapa(toGeoJSON.kml(kmlDom), file.name, null, true);
                     } catch (err) { alert("Erro ao processar .kml."); document.getElementById('loading-shp').style.display = 'none'; }
                 }; reader.readAsText(file);
             } else {
-                reader.onload = (e) => { try { processarGeoJSON_NoMapa(JSON.parse(e.target.result), "🌍 " + file.name, null, true); } catch(err) { alert("Ficheiro inválido."); document.getElementById('loading-shp').style.display = 'none'; } }; reader.readAsText(file);
+                reader.onload = (e) => { try { processarGeoJSON_NoMapa(JSON.parse(e.target.result), file.name, null, true); } catch(err) { alert("Ficheiro inválido."); document.getElementById('loading-shp').style.display = 'none'; } }; reader.readAsText(file);
             }
         }
 
