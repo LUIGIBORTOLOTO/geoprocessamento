@@ -187,11 +187,22 @@
                     Selecione a cidade e o arquivo que deseja carregar:
                 </p>
                 
-                <select id="select-bases-nuvem" style="margin-bottom: 10px;">
-                    <optgroup label="📍 Contagem - RMBH">
-                        <option value="https://github.com/LUIGIBORTOLOTO/geoprocessamento/releases/download/v1.0/Lote_urbanistico.zip">🏙️ Lotes Urbanísticos</option>
+                <select id="select-bases-nuvem" style="margin-bottom: 10px; padding: 5px; border-radius: 5px;">
+                    <option value="">Selecione uma regional para carregar...</option>
+                    
+                    <optgroup label="📍 Lotes Contagem - Regionais">
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_ELDORADO.zip">🏙️ Regional Eldorado</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_INDUSTRIAL.zip">🏙️ Regional Industrial</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_NACIONAL.zip">🏙️ Regional Nacional</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_PETROLANDIA.zip">🏙️ Regional Petrolândia</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_RESSACA.zip">🏙️ Regional Ressaca</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_RIACHO.zip">🏙️ Regional Riacho</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_Sede.zip">🏙️ Regional Sede</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_VARGEM%20DAS%20FLORES.zip">🏙️ Regional Vargem das Flores</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_6.zip">🏙️ Regional 6</option>
+                        <option value="https://raw.githubusercontent.com/LUIGIBORTOLOTO/geoprocessamento/main/bases/mg_contagem/lotes/Regiao_adm_8.zip">🏙️ Regional 8</option>
                     </optgroup>
-                    </select>
+                </select>
 
                 <button class="btn btn-primary btn-block" onclick="baixarBaseSelecionada()">☁️ Carregar Base Selecionada</button>
             </div>
@@ -260,7 +271,7 @@
             </div>
             
             <div style="margin-top: auto; text-align: center; border-top: 1px solid var(--border); padding-top: 15px;">
-                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">GeoPonto WebGIS v7.4 | Bypass GitHub API</p>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">GeoPonto WebGIS v7.4 | Integrado ao GitHub</p>
             </div>
         </div>
     </aside>
