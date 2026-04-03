@@ -353,6 +353,8 @@
                     <li><strong style="color:white;">Aba 4 (Exportar):</strong> Baixe a área visível do mapa em DXF para AutoCAD, garantindo que as camadas e textos estejam organizados, ou exporte para GIS (GeoJSON).</li>
                 </ul>
             </div>
+            
+            <button class="btn btn-danger btn-block" style="margin-top: auto;" onclick="location.reload()">🚪 Fechar Sessão (Recarregar)</button>
         </div>
 
     </aside>
@@ -426,7 +428,6 @@
             carregarBaseDaInternet(url, nomeLimpo);
         }
 
-        // --- NOVA FUNÇÃO: CARREGAR TODA CONTAGEM SEQUENCIALMENTE ---
         async function carregarTodaContagem() {
             var select = document.getElementById('select-bases-nuvem');
             var options = select.querySelectorAll('optgroup[label*="Contagem"] option');
@@ -451,7 +452,6 @@
                 
                 if (url) {
                     carregarBaseDaInternet(url, nomeText);
-                    // Pausa de 1.5s entre o disparo dos downloads para não engasgar o navegador
                     await new Promise(r => setTimeout(r, 1500)); 
                 }
             }
@@ -462,7 +462,6 @@
             }, 5000);
         }
 
-        // --- FUNÇÃO ATUALIZADA COM TRUQUE DA API DO GITHUB (BYPASS CORS) ---
         async function carregarBaseDaInternet(urlDownload, nomeArquivoVisivel) {
             var loading = document.getElementById('loading-shp');
             loading.style.display = 'block';
@@ -472,7 +471,6 @@
                 let finalUrl = urlDownload;
                 let fetchConfig = {};
 
-                // Se o link for do GitHub Releases, usa a "Porta dos Fundos" da API
                 if (urlDownload.includes('github.com') && urlDownload.includes('/releases/download/')) {
                     const partes = urlDownload.split('/');
                     const user = partes[3];
@@ -505,7 +503,6 @@
                 
                 loading.innerText = `⏳ Arquivo recebido! A carregar polígonos no mapa...`;
                 
-                // Dá um tempinho para a tela renderizar o texto antes do navegador travar no processamento
                 setTimeout(() => { importarShapefile(eventoFalso); }, 200);
                 
             } catch (error) {
@@ -513,7 +510,6 @@
                 loading.style.display = 'none';
             }
         }
-        // -----------------------------------------------------
 
         function carregarTextoEntrada(e) {
             var file = e.target.files[0];
