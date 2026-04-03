@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>LuiGIS Pro v1.0 | Sistema Restrito</title>
+    <title>LuiGIS v1.0 | Sistema Restrito</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,8 +73,8 @@
         .insta-btn { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; padding: 8px 14px; border-radius: 20px; font-size: 11px; text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 15px rgba(220, 39, 67, 0.3); transition: 0.3s;}
         .insta-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(220, 39, 67, 0.5); }
 
-        .tabs { display: flex; padding: 12px; background-color: var(--bg-dark); gap: 6px; border-bottom: 1px solid var(--border); }
-        .tab-btn { flex: 1; padding: 10px 4px; background: var(--bg-card); border: 1px solid transparent; color: var(--text-muted); cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; }
+        .tabs { display: flex; padding: 12px; background-color: var(--bg-dark); gap: 4px; border-bottom: 1px solid var(--border); }
+        .tab-btn { flex: 1; padding: 10px 2px; background: var(--bg-card); border: 1px solid transparent; color: var(--text-muted); cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; }
         .tab-btn.active { color: #fff; background-color: var(--accent); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         .tab-btn:hover:not(.active) { color: var(--text-light); background-color: var(--border); }
 
@@ -164,7 +164,7 @@
                     <ellipse cx="50" cy="50" rx="30" ry="10" stroke="white" stroke-width="4" fill="none" transform="rotate(-30 50 50)"/>
                     <circle cx="40" cy="40" r="4" fill="white"/>
                 </svg>
-                <h2>LuiGIS Pro</h2>
+                <h2>LuiGIS</h2>
             </div>
             
             <p style="font-size:12px; color:var(--text-muted); margin-bottom: 25px;">Acesso restrito. Digite suas credenciais.</p>
@@ -193,7 +193,7 @@
                     <ellipse cx="50" cy="50" rx="30" ry="10" stroke="white" stroke-width="4" fill="none" transform="rotate(-30 50 50)"/>
                     <circle cx="40" cy="40" r="4" fill="white"/>
                 </svg>
-                <h1>LuiGIS Pro</h1>
+                <h1>LuiGIS</h1>
             </div>
             <a href="https://www.instagram.com/luigibortoloto" target="_blank" class="insta-btn">
                 <span>@luigibortoloto</span>
@@ -205,6 +205,7 @@
             <button class="tab-btn" onclick="abrirAba('aba-camadas', this)">2. Camadas</button>
             <button class="tab-btn" onclick="abrirAba('aba-editor', this)">3. Tabela</button>
             <button class="tab-btn" onclick="abrirAba('aba-exportar', this)">4. Exportar</button>
+            <button class="tab-btn" onclick="abrirAba('aba-sobre', this)">5. Sobre</button>
         </div>
 
         <div id="aba-entrada" class="tab-content active">
@@ -257,6 +258,7 @@
                 </select>
 
                 <button class="btn btn-primary btn-block" onclick="baixarBaseSelecionada()">☁️ Carregar Base Selecionada</button>
+                <button id="btn-toda-contagem" class="btn btn-outline btn-block" style="margin-top: 8px; border-color: var(--warning); color: var(--warning);" onclick="carregarTodaContagem()">🗺️ Carregar Toda Contagem (Pesado)</button>
             </div>
 
             <div class="card">
@@ -323,9 +325,36 @@
             </div>
             
             <div style="margin-top: auto; text-align: center; border-top: 1px solid var(--border); padding-top: 15px;">
-                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">LuiGIS Pro v1.0 | Integrado ao GitHub</p>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">LuiGIS v1.0 | Integrado ao GitHub</p>
             </div>
         </div>
+
+        <div id="aba-sobre" class="tab-content">
+            <div class="card" style="border-color: var(--accent);">
+                <label style="color: var(--accent); font-size: 14px;">🌍 Sobre o LuiGIS</label>
+                <p style="font-size: 12px; line-height: 1.6; color: var(--text-light); margin-top: 0;">
+                    O <strong>LuiGIS</strong> é um WebGIS avançado projetado para agilizar o fluxo de trabalho de profissionais de geoprocessamento e topografia. Ele permite o cruzamento rápido de dados RTK com bases cartográficas pesadas diretamente no navegador, sem a necessidade de servidores complexos ou softwares desktop para consultas rápidas.
+                </p>
+            </div>
+
+            <div class="card" style="border-color: var(--purple); background: rgba(139, 92, 246, 0.05);">
+                <label style="color: var(--purple); font-size: 13px;">🧠 Construção Guiada por IA</label>
+                <p style="font-size: 12px; line-height: 1.6; color: var(--text-muted); margin-top: 0;">
+                    A arquitetura lógica, o design da interface, o processamento geoespacial em JavaScript e a superação de limites técnicos de rede (bypass CORS) foram estruturados e codificados de forma colaborativa com <strong>Inteligência Artificial</strong>. Um projeto que une a visão e a engenharia humana com a velocidade de desenvolvimento da IA.
+                </p>
+            </div>
+
+            <div class="card">
+                <label>Como Funciona o Sistema</label>
+                <ul style="font-size: 11px; padding-left: 20px; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                    <li><strong style="color:white;">Aba 1 (RTK):</strong> Cole dados brutos de estação total ou RTK e plote no mapa com conversão de coordenadas automática.</li>
+                    <li><strong style="color:white;">Aba 2 (Camadas):</strong> Acesse bases da nuvem separadas por regionais ou arraste seus próprios SHP, KML e GeoJSON.</li>
+                    <li><strong style="color:white;">Aba 3 (Tabela):</strong> Editor de atributos em tempo real para os vértices medidos.</li>
+                    <li><strong style="color:white;">Aba 4 (Exportar):</strong> Baixe a área visível do mapa em DXF para AutoCAD, garantindo que as camadas e textos estejam organizados, ou exporte para GIS (GeoJSON).</li>
+                </ul>
+            </div>
+        </div>
+
     </aside>
 
     <main id="map-container">
@@ -395,6 +424,42 @@
             var nomeLimpo = nomeText.replace(/[^\w\sÀ-ú]/g, '').trim().replace(/\s+/g, '_') + '.zip';
             
             carregarBaseDaInternet(url, nomeLimpo);
+        }
+
+        // --- NOVA FUNÇÃO: CARREGAR TODA CONTAGEM SEQUENCIALMENTE ---
+        async function carregarTodaContagem() {
+            var select = document.getElementById('select-bases-nuvem');
+            var options = select.querySelectorAll('optgroup[label*="Contagem"] option');
+            
+            if(options.length === 0) {
+                alert("Nenhuma regional encontrada na lista.");
+                return;
+            }
+            
+            if(!confirm("⚠️ AVISO DE PERFORMANCE:\n\nCarregar todas as regionais de Contagem simultaneamente vai baixar vários arquivos pesados. Isso exige memória RAM e pode causar lentidão temporária no seu navegador.\n\nDeseja continuar e carregar a cidade inteira?")) {
+                return;
+            }
+
+            var btn = document.getElementById('btn-toda-contagem');
+            var btnTextOriginal = btn.innerHTML;
+            btn.innerHTML = "⏳ Carregando todas... aguarde";
+            btn.disabled = true;
+
+            for (var i = 0; i < options.length; i++) {
+                var url = options[i].value;
+                var nomeText = options[i].text.replace(/[^\w\sÀ-ú]/g, '').trim().replace(/\s+/g, '_') + '.zip';
+                
+                if (url) {
+                    carregarBaseDaInternet(url, nomeText);
+                    // Pausa de 1.5s entre o disparo dos downloads para não engasgar o navegador
+                    await new Promise(r => setTimeout(r, 1500)); 
+                }
+            }
+            
+            setTimeout(() => {
+                btn.innerHTML = btnTextOriginal;
+                btn.disabled = false;
+            }, 5000);
         }
 
         // --- FUNÇÃO ATUALIZADA COM TRUQUE DA API DO GITHUB (BYPASS CORS) ---
