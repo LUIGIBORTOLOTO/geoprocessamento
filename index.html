@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>LuiGIS v1.1 | Sistema Restrito</title>
+    <title>LuiGIS v1.2 | Sistema Restrito com CAD</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,6 +10,10 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
@@ -74,7 +78,7 @@
         .insta-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(220, 39, 67, 0.5); }
 
         .tabs { display: flex; padding: 8px; background-color: var(--bg-dark); gap: 4px; border-bottom: 1px solid var(--border); flex-wrap: wrap;}
-        .tab-btn { flex: 1; padding: 10px 2px; background: var(--bg-card); border: 1px solid transparent; color: var(--text-muted); cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; min-width: 65px; }
+        .tab-btn { flex: 1; padding: 10px 2px; background: var(--bg-card); border: 1px solid transparent; color: var(--text-muted); cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; min-width: 60px; }
         .tab-btn.active { color: #fff; background-color: var(--accent); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         .tab-btn:hover:not(.active) { color: var(--text-light); background-color: var(--border); }
 
@@ -99,7 +103,7 @@
         .btn-primary { background-color: var(--accent); color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
         .btn-primary:hover { background-color: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4); }
         .btn-success { background-color: var(--success); color: white; }
-        .btn-warning { background-color: var(--warning); color: white; }
+        .btn-warning { background-color: var(--warning); color: #000; }
         .btn-purple { background-color: var(--purple); color: white; }
         .btn-small { padding: 6px 10px; font-size: 10px; height: auto; border-radius: 4px; }
         .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 11px; }
@@ -113,11 +117,18 @@
         
         .color-picker { width: 28px; height: 28px; padding: 0; border: none; border-radius: 6px; cursor: pointer; background: transparent; }
 
-        .tabela-editor { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
-        .tabela-editor th { background-color: var(--bg-dark); padding: 10px; text-align: left; color: var(--text-muted); position: sticky; top: 0; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;}
-        .tabela-editor td { padding: 6px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
-        .tabela-editor input { background: transparent; border: 1px solid transparent; color: white; width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px;}
-        .tabela-editor input:focus { border-color: var(--accent); background: var(--bg-dark);}
+        /* --- NOVO VISUAL ESTILO PLANILHA EXCEL --- */
+        .spreadsheet-container { overflow-x: auto; background: var(--bg-dark); border: 1px solid var(--border); padding: 2px; }
+        .tabela-editor { width: 100%; border-collapse: collapse; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
+        .tabela-editor th, .tabela-editor td { border: 1px solid #334155; padding: 6px 8px; }
+        .tabela-editor th { background-color: #1e293b; color: var(--text-muted); position: sticky; top: 0; z-index: 2; text-transform: uppercase; text-align: center; letter-spacing: 1px; font-family: 'Inter', sans-serif; font-size: 10px;}
+        .tabela-editor td { background-color: #0f172a; color: #e2e8f0; text-align: right; }
+        .tabela-editor td.col-id { text-align: center; background-color: #1e293b; font-weight: bold; width: 30px; color: #94a3b8; }
+        .tabela-editor td.col-text { text-align: left; }
+        .tabela-editor input { background: transparent; border: none; color: #60a5fa; width: 100%; font-family: 'Courier New', Courier, monospace; font-size: 13px; text-align: right; outline: none; padding: 0;}
+        .tabela-editor input[type="text"] { color: #f8fafc; text-align: left; }
+        .tabela-editor input:focus { background: rgba(59, 130, 246, 0.15); box-shadow: inset 0 0 0 1px var(--accent); }
+        .tabela-editor tr:hover td { background-color: #1e293b; }
 
         #map-container { flex-grow: 1; position: relative; }
         #map { height: 100%; width: 100%; z-index: 1; }
@@ -214,9 +225,10 @@
             <button class="tab-btn active" onclick="abrirAba('aba-entrada', this)">1. Pontos</button>
             <button class="tab-btn" onclick="abrirAba('aba-camadas', this)">2. Camadas</button>
             <button class="tab-btn" onclick="abrirAba('aba-editor', this)">3. Tabela</button>
-            <button class="tab-btn" onclick="abrirAba('aba-exportar', this)">4. Exportar</button>
-            <button class="tab-btn" onclick="abrirAba('aba-documentos', this)" style="border-bottom: 2px solid var(--success);">5. Documentos</button>
-            <button class="tab-btn" onclick="abrirAba('aba-sobre', this)">6. Sobre</button>
+            <button class="tab-btn" onclick="abrirAba('aba-cad', this)" style="color:var(--warning);">4. CAD</button>
+            <button class="tab-btn" onclick="abrirAba('aba-exportar', this)">5. Exportar</button>
+            <button class="tab-btn" onclick="abrirAba('aba-documentos', this)">6. Docs</button>
+            <button class="tab-btn" onclick="abrirAba('aba-sobre', this)">7. Sobre</button>
         </div>
 
         <div id="aba-entrada" class="tab-content active">
@@ -287,15 +299,44 @@
 
         <div id="aba-editor" class="tab-content" style="padding:0;">
             <div style="padding:15px; border-bottom:1px solid var(--border); background: var(--bg-panel); position:sticky; top:0; z-index:5;">
-                <button class="btn btn-success btn-block" onclick="salvarEdicoes()">✅ Guardar Edições</button>
+                <button class="btn btn-success btn-block" onclick="salvarEdicoes()">✅ Aplicar Alterações na Planilha</button>
             </div>
-            <div style="padding:15px;">
+            <div class="spreadsheet-container" style="padding: 10px;">
                 <table class="tabela-editor">
-                    <thead><tr><th width="15%">#</th><th>Nome do Vértice</th><th width="30%">Cota Z</th></tr></thead>
+                    <thead><tr><th class="col-id">#</th><th>ID / Vértice</th><th>Coord E (X)</th><th>Coord N (Y)</th><th>Cota (Z)</th></tr></thead>
                     <tbody id="tabela-editor-body">
-                        <tr><td colspan="3" style="text-align: center; padding: 30px; color: var(--text-muted);">Aguardando plotagem de dados...</td></tr>
+                        <tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">Aguardando plotagem...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div id="aba-cad" class="tab-content">
+            <div class="card" style="border-color: var(--warning); background: rgba(245, 158, 11, 0.05);">
+                <label style="color: var(--warning); font-size: 14px;">🛠️ Ferramentas CAD Online</label>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 0;">Use os botões de desenho no lado esquerdo do mapa para criar geometrias. Áreas de polígonos são calculadas automaticamente.</p>
+                
+                <hr style="border: 0; border-top: 1px solid var(--border); width: 100%; margin: 10px 0;">
+                
+                <label>Blocos Topográficos Ativos (Para Marcadores)</label>
+                <select id="cad-block-type" style="margin-bottom: 10px;">
+                    <option value="default">📍 Ponto Padrão (Círculo)</option>
+                    <option value="tree">🌳 Árvore / Vegetação</option>
+                    <option value="light">⚡ Poste / Padrão de Luz</option>
+                    <option value="water">💧 Caixa de Água / Hidrante</option>
+                    <option value="sewer">🕳️ Bueiro / Poço de Visita</option>
+                    <option value="tn">⛰️ Ponto de Terreno Natural</option>
+                    <option value="house">🏠 Edificação / Marco</option>
+                </select>
+
+                <div style="display:flex; gap: 10px;">
+                    <div style="flex:1;">
+                        <label>Cor do Desenho</label>
+                        <input type="color" id="cad-color" value="#f59e0b" style="width: 100%; height: 40px; padding: 2px; cursor: pointer; border-radius: 4px; border: none; background: transparent;">
+                    </div>
+                </div>
+                
+                <button class="btn btn-warning btn-block" style="margin-top: 10px; color:#000;" onclick="limparCAD()">🗑️ Limpar Todos Desenhos CAD</button>
             </div>
         </div>
 
@@ -381,17 +422,6 @@
                     A arquitetura lógica, o design da interface, o processamento geoespacial em JavaScript e a superação de limites técnicos de rede (bypass CORS) foram estruturados e codificados de forma colaborativa com <strong>Inteligência Artificial</strong>. 
                 </p>
             </div>
-
-            <div class="card">
-                <label>Como Funciona o Sistema</label>
-                <ul style="font-size: 11px; padding-left: 20px; line-height: 1.6; color: var(--text-muted); margin: 0;">
-                    <li><strong style="color:white;">Aba 1 (Pontos):</strong> Cole dados brutos de estação total, PDF ou RTK e plote no mapa com conversão de coordenadas automática.</li>
-                    <li><strong style="color:white;">Aba 2 (Camadas):</strong> Acesse bases da nuvem separadas por regionais ou arraste seus próprios SHP, KML e GeoJSON.</li>
-                    <li><strong style="color:white;">Aba 3 (Tabela):</strong> Editor de atributos em tempo real.</li>
-                    <li><strong style="color:white;">Aba 4 (Exportar):</strong> Baixe a área visível do mapa em CSV, DXF ou GeoJSON.</li>
-                    <li><strong style="color:white;">Aba 5 (Documentos):</strong> Geração de Memorial, Tabelas Analíticas SGL/UTM, Requerimento e Anuência.</li>
-                </ul>
-            </div>
             
             <button class="btn btn-danger btn-block" style="margin-top: auto;" onclick="location.reload()">🚪 Fechar Sessão (Recarregar)</button>
         </div>
@@ -429,22 +459,58 @@
 
         var map = L.map('map', { preserveDrawingBuffer: true, zoomControl: false, layers: [googleSat] }).setView([-19.932, -44.053], 13);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
-        
-        // Adiciona o Controle de Camadas no canto inferior esquerdo
         L.control.layers(basemaps, null, { position: 'bottomleft' }).addTo(map);
         
+        // ==========================================
+        // INIT GEOMAN CAD ENGINE
+        // ==========================================
+        map.pm.addControls({ position: 'topleft', drawCircle: false, drawCircleMarker: false, drawText: false });
+        map.pm.setLang('pt_br');
+        map.pm.setPathOptions({ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.2 });
+
+        var cadLayerGroup = L.featureGroup().addTo(map);
+        
+        document.getElementById('cad-color').addEventListener('change', function(e) {
+            map.pm.setPathOptions({ color: e.target.value, fillColor: e.target.value });
+        });
+
+        map.on('pm:create', function(e) {
+            var layer = e.layer;
+            
+            if(e.shape === 'Marker') {
+                var type = document.getElementById('cad-block-type').value;
+                if(type !== 'default') {
+                    var dict = { 'tree':'🌳', 'light':'⚡', 'water':'💧', 'sewer':'🕳️', 'tn':'⛰️', 'house':'🏠' };
+                    layer.setIcon(L.divIcon({ html: `<div style="font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); text-align: center; line-height: 24px;">${dict[type]}</div>`, className: '', iconSize: [24,24], iconAnchor: [12,12] }));
+                } else {
+                    layer.setIcon(L.circleMarker(layer.getLatLng(), {radius:5, color: document.getElementById('cad-color').value, fillColor: '#fff', fillOpacity: 1}));
+                }
+            } 
+            else if (e.shape === 'Polygon' || e.shape === 'Rectangle') {
+                try {
+                    var geojson = layer.toGeoJSON();
+                    var areaSqM = turf.area(geojson);
+                    layer.bindPopup(`<b>📐 Área Calculada:</b><br>${areaSqM.toFixed(2)} m²`).openPopup();
+                } catch(err) {}
+            }
+            cadLayerGroup.addLayer(layer);
+        });
+
+        function limparCAD() {
+            if(confirm("Deseja apagar todos os desenhos do CAD?")) { cadLayerGroup.clearLayers(); }
+        }
+
         var memoria = { nomes: [], cotas: [], lon: [], lat: [] };
         var datumsDef = { "WGS84": "+datum=WGS84", "SIRGAS2000": "+ellps=GRS80 +towgs84=0,0,0,0,0,0,0", "SAD69": "+ellps=aust_SA +towgs84=-66.87,4.37,-38.52,0,0,0,0" };
         var gerenciadorCamadas = [];
         var camadaIdCounter = 0;
-        
         var colunasGlobais = {}; 
 
         // VARIÁVEIS GLOBAIS PARA ÁREA E PERÍMETRO
         var ultimaAreaCalculada = 0;
         var ultimoPerimetroCalculado = 0;
 
-        // --- LÓGICA DE LOGIN COM USUÁRIO E SENHA (LuiGIS) ---
+        // --- LÓGICA DE LOGIN ---
         function verificarLogin() {
             const usuarioCorreto = "luigibortoloto";
             const senhaCorreta = "654123";
@@ -457,9 +523,7 @@
 
             if (inputUser === usuarioCorreto && inputPass === senhaCorreta) {
                 overlay.style.opacity = "0";
-                setTimeout(() => {
-                    overlay.style.display = "none";
-                }, 500);
+                setTimeout(() => { overlay.style.display = "none"; }, 500);
             } else {
                 erro.style.display = "block";
                 document.getElementById('pass-input').value = "";
@@ -477,25 +541,16 @@
             var select = document.getElementById('select-bases-nuvem');
             var url = select.value;
             if(!url) { alert("Selecione um arquivo válido."); return; }
-            
             var nomeText = select.options[select.selectedIndex].text;
             var nomeLimpo = nomeText.replace(/[^\w\sÀ-ú]/g, '').trim().replace(/\s+/g, '_') + '.zip';
-            
             carregarBaseDaInternet(url, nomeLimpo);
         }
 
         async function carregarTodaContagem() {
             var select = document.getElementById('select-bases-nuvem');
             var options = select.querySelectorAll('optgroup[label*="Contagem"] option');
-            
-            if(options.length === 0) {
-                alert("Nenhuma regional encontrada na lista.");
-                return;
-            }
-            
-            if(!confirm("⚠️ AVISO DE PERFORMANCE:\n\nCarregar todas as regionais de Contagem simultaneamente vai baixar vários arquivos pesados. Isso exige memória RAM e pode causar lentidão temporária no seu navegador.\n\nDeseja continuar e carregar a cidade inteira?")) {
-                return;
-            }
+            if(options.length === 0) { alert("Nenhuma regional encontrada na lista."); return; }
+            if(!confirm("⚠️ AVISO DE PERFORMANCE:\n\nCarregar todas as regionais de Contagem simultaneamente vai baixar vários arquivos pesados. Isso exige memória RAM e pode causar lentidão temporária no seu navegador.\n\nDeseja continuar e carregar a cidade inteira?")) return;
 
             var btn = document.getElementById('btn-toda-contagem');
             var btnTextOriginal = btn.innerHTML;
@@ -505,17 +560,9 @@
             for (var i = 0; i < options.length; i++) {
                 var url = options[i].value;
                 var nomeText = options[i].text.replace(/[^\w\sÀ-ú]/g, '').trim().replace(/\s+/g, '_') + '.zip';
-                
-                if (url) {
-                    carregarBaseDaInternet(url, nomeText);
-                    await new Promise(r => setTimeout(r, 1500)); 
-                }
+                if (url) { carregarBaseDaInternet(url, nomeText); await new Promise(r => setTimeout(r, 1500)); }
             }
-            
-            setTimeout(() => {
-                btn.innerHTML = btnTextOriginal;
-                btn.disabled = false;
-            }, 5000);
+            setTimeout(() => { btn.innerHTML = btnTextOriginal; btn.disabled = false; }, 5000);
         }
 
         async function carregarBaseDaInternet(urlDownload, nomeArquivoVisivel) {
@@ -529,36 +576,25 @@
 
                 if (urlDownload.includes('github.com') && urlDownload.includes('/releases/download/')) {
                     const partes = urlDownload.split('/');
-                    const user = partes[3];
-                    const repo = partes[4];
-                    const tag = partes[7];
-                    const filename = decodeURIComponent(partes[8]);
-
+                    const user = partes[3]; const repo = partes[4]; const tag = partes[7]; const filename = decodeURIComponent(partes[8]);
                     const apiUrl = `https://api.github.com/repos/${user}/${repo}/releases/tags/${tag}`;
                     const apiRes = await fetch(apiUrl);
-                    
                     if (!apiRes.ok) throw new Error("Erro de comunicação com a API do GitHub.");
-                    
                     const releaseData = await apiRes.json();
                     const asset = releaseData.assets.find(a => a.name === filename);
-                    
                     if (!asset) throw new Error("Arquivo não encontrado no Release do GitHub.");
-
                     finalUrl = asset.url;
                     fetchConfig = { headers: { 'Accept': 'application/octet-stream' } };
                 }
 
                 loading.innerText = `⏳ A transferir arquivo... Aguarde.`;
                 let response = await fetch(finalUrl, fetchConfig);
-                
                 if (!response.ok) throw new Error("Falha no download da base (Erro " + response.status + ").");
-                
                 let blob = await response.blob();
                 let ficheiroVirtual = new File([blob], nomeArquivoVisivel, { type: "application/zip" });
                 let eventoFalso = { target: { files: [ficheiroVirtual] } };
                 
                 loading.innerText = `⏳ Arquivo recebido! A carregar polígonos no mapa...`;
-                
                 setTimeout(() => { importarShapefile(eventoFalso); }, 200);
                 
             } catch (error) {
@@ -568,11 +604,8 @@
         }
 
         function carregarTextoEntrada(e) {
-            var file = e.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function(ev) { document.getElementById('main-texto').value = ev.target.result; };
-            reader.readAsText(file);
+            var file = e.target.files[0]; if (!file) return;
+            var reader = new FileReader(); reader.onload = function(ev) { document.getElementById('main-texto').value = ev.target.result; }; reader.readAsText(file);
         }
 
         function obterEpsgEntrada() {
@@ -585,6 +618,9 @@
             return (fmtIn === 'utm') ? `+proj=utm +zone=${zona} ${projHemi}${projDatum} +units=m +no_defs` : `+proj=longlat ${projDatum} +no_defs`;
         }
 
+        // ==========================================
+        // CORREÇÃO DA LÓGICA DE COTA Z
+        // ==========================================
         function processarLevantamento() {
             var txt = document.getElementById('main-texto').value;
             if(!txt.trim()) { alert("Por favor, insira os dados do levantamento."); return; }
@@ -614,11 +650,13 @@
                         var fmtIn = document.getElementById('main-formato').value;
                         if(fmtIn === 'utm') {
                             var possivelNorte = numeros.find(num => num > 1000000 && num < 10000000);
-                            var possivelEste = numeros.find(num => num > 100000 && num < 1000000);
+                            var possivelEste = numeros.find(num => num > 100000 && num < 1000000 && num !== possivelNorte);
+                            
                             if(possivelNorte && possivelEste) {
                                 y = possivelNorte; x = possivelEste;
-                                var tempZ = numeros.find(num => num !== possivelNorte && num !== possivelEste);
-                                if(tempZ !== undefined) z = tempZ;
+                                // A Cota Z é rigorosamente o número que não é X nem Y
+                                var numRestantes = numeros.filter(num => num !== possivelNorte && num !== possivelEste);
+                                if(numRestantes.length > 0) z = numRestantes[0];
                             } else { x = numeros[0]; y = numeros[1]; if(numeros.length > 2) z = numeros[2]; }
                         } else {
                             x = numeros[0]; y = numeros[1]; if(numeros.length > 2) z = numeros[2];
@@ -633,6 +671,42 @@
             }
             if(memoria.lon.length === 0) { alert("Nenhuma coordenada convertida."); return; }
             atualizarEditor(); atualizarMapa(true);
+        }
+
+        // ==========================================
+        // TABELA ESTILO PLANILHA
+        // ==========================================
+        function atualizarEditor() {
+            var b = document.getElementById('tabela-editor-body'); b.innerHTML = "";
+            memoria.nomes.forEach((n, i) => {
+                try {
+                    var epsgIn = obterEpsgEntrada();
+                    var epsgOut = "+proj=longlat +datum=WGS84 +no_defs";
+                    var original = proj4(epsgOut, epsgIn, [memoria.lon[i], memoria.lat[i]]);
+                    
+                    b.innerHTML += `<tr>
+                        <td class="col-id">${i+1}</td>
+                        <td class="col-text"><input type="text" id="ed-n-${i}" value="${n}"></td>
+                        <td>${original[0].toFixed(4)}</td>
+                        <td>${original[1].toFixed(4)}</td>
+                        <td><input type="number" step="0.001" id="ed-z-${i}" value="${memoria.cotas[i]}"></td>
+                    </tr>`; 
+                } catch(e) {
+                     b.innerHTML += `<tr>
+                        <td class="col-id">${i+1}</td>
+                        <td class="col-text"><input type="text" id="ed-n-${i}" value="${n}"></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><input type="number" step="0.001" id="ed-z-${i}" value="${memoria.cotas[i]}"></td>
+                    </tr>`; 
+                }
+            });
+        }
+        function salvarEdicoes() {
+            if(memoria.lon.length === 0) return;
+            memoria.nomes.forEach((n, i) => { memoria.nomes[i] = document.getElementById(`ed-n-${i}`).value; memoria.cotas[i] = parseFloat(document.getElementById(`ed-z-${i}`).value) || 0; });
+            atualizarMapa(false);
+            alert("Atributos guardados com sucesso!");
         }
 
         function atualizarMapa(zoom = false) {
@@ -696,10 +770,6 @@
             renderizarGestorCamadas();
         }
 
-        // ==========================================
-        // LÓGICA DE DOCUMENTOS (ABA 5)
-        // ==========================================
-
         function calcAzimuteDist(x1, y1, x2, y2) {
             var dx = x2 - x1; var dy = y2 - y1;
             var dist = Math.sqrt(dx*dx + dy*dy);
@@ -722,9 +792,7 @@
         }
 
         function gerarDocumento(tipo) {
-            if (memoria.lon.length < 3 && tipo === 'memorial') { 
-                alert("Necessário um polígono fechado (mínimo 3 vértices) para gerar memorial."); return; 
-            }
+            if (memoria.lon.length < 3 && tipo === 'memorial') { alert("Necessário um polígono fechado (mínimo 3 vértices) para gerar memorial."); return; }
 
             var prop = document.getElementById('doc-prop').value || "Não informado";
             var mun = document.getElementById('doc-mun').value || "Não informado";
@@ -737,7 +805,6 @@
             var conteudoHTML = "";
 
             if (tipo === 'memorial') {
-                // Prepara vetores no Plano UTM para calculos
                 var coordsUTM = [];
                 for(var i=0; i<memoria.lon.length; i++) {
                     var c = obterPlanoUTM(memoria.lon[i], memoria.lat[i]);
@@ -763,7 +830,6 @@
                     
                     desc += `<p style="text-align: justify; margin: 5px 0;">Do vértice <strong>${memoria.nomes[pAtual]}</strong> ao vértice <strong>${memoria.nomes[pProx]}</strong>, com azimute de <strong>${calc.azimute}</strong> e distância de <strong>${calc.dist.replace('.',',')} m</strong>, confrontando neste trecho com ${confront}, até as coordenadas N <strong>${coordsUTM[pProx].y.toFixed(3).replace('.',',')} m</strong> e E <strong>${coordsUTM[pProx].x.toFixed(3).replace('.',',')} m</strong>.</p>`;
                     
-                    // Calculo rudimentar SGL (Sist. Geodésico Local) assumindo o ponto 0 como Origem 0,0
                     var sglX = coordsUTM[pAtual].x - startX;
                     var sglY = coordsUTM[pAtual].y - startY;
 
@@ -842,8 +908,6 @@
             janela.document.close();
             setTimeout(() => { janela.print(); }, 500);
         }
-
-        // ==========================================
 
         var modoRegua = false; var reguaLayer = L.featureGroup().addTo(map); var reguaPts = []; var reguaLinha = null;
         function toggleRegua() {
@@ -1037,16 +1101,6 @@
             camadasReversas.forEach(camada => { if(camada.visivel && camada.leafletLayer.bringToFront) camada.leafletLayer.bringToFront(); });
         }
 
-        function atualizarEditor() {
-            var b = document.getElementById('tabela-editor-body'); b.innerHTML = "";
-            memoria.nomes.forEach((n, i) => { b.innerHTML += `<tr><td>${i+1}</td><td><input type="text" id="ed-n-${i}" value="${n}"></td><td><input type="number" step="0.001" id="ed-z-${i}" value="${memoria.cotas[i]}"></td></tr>`; });
-        }
-        function salvarEdicoes() {
-            if(memoria.lon.length === 0) return;
-            memoria.nomes.forEach((n, i) => { memoria.nomes[i] = document.getElementById(`ed-n-${i}`).value; memoria.cotas[i] = parseFloat(document.getElementById(`ed-z-${i}`).value) || 0; });
-            atualizarMapa(false);
-        }
-
         function obterCoordenadasExportacao() {
             var fmtOut = document.getElementById('out-formato').value; var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU; 
             var pts = [];
@@ -1080,10 +1134,7 @@
             var hasRtk = memoria.lon.length > 0;
             var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel);
             
-            if (!hasRtk && !hasLayers) { 
-                alert("Não há dados visíveis para exportar."); 
-                return; 
-            }
+            if (!hasRtk && !hasLayers) { alert("Não há dados visíveis para exportar."); return; }
 
             var csvContent = "\uFEFF"; 
             var headers = ["Origem", "Nome_ID", "Coord_X", "Coord_Y", "Cota_Z"];
@@ -1091,7 +1142,6 @@
 
             var extras = [];
             for (var k in colunasGlobais) { if (colunasGlobais[k]) extras.push(k); }
-            
             headers = headers.concat(extras);
             rows.push(headers.join(";"));
 
@@ -1102,13 +1152,7 @@
             if (hasRtk) {
                 for(var i=0; i<memoria.lon.length; i++) {
                     var c = proj4(epsgU, epsgD, [memoria.lon[i], memoria.lat[i]]);
-                    var row = [
-                        "Pontos_Levantamento", 
-                        memoria.nomes[i], 
-                        c[0].toFixed(5).replace('.', ','), 
-                        c[1].toFixed(5).replace('.', ','), 
-                        memoria.cotas[i].toString().replace('.', ',')
-                    ];
+                    var row = [ "Pontos_Levantamento", memoria.nomes[i], c[0].toFixed(5).replace('.', ','), c[1].toFixed(5).replace('.', ','), memoria.cotas[i].toString().replace('.', ',') ];
                     for(var e=0; e<extras.length; e++) row.push("");
                     rows.push(row.join(";"));
                 }
@@ -1120,20 +1164,11 @@
                     try {
                         var centro = turf.centroid(feat).geometry.coordinates;
                         var c = proj4(epsgU, epsgD, [centro[0], centro[1]]);
-                        
-                        var row = [
-                            "Camada_SHP", 
-                            "Geometria", 
-                            c[0].toFixed(5).replace('.', ','), 
-                            c[1].toFixed(5).replace('.', ','), 
-                            "0"
-                        ];
-                        
+                        var row = [ "Camada_SHP", "Geometria", c[0].toFixed(5).replace('.', ','), c[1].toFixed(5).replace('.', ','), "0" ];
                         extras.forEach(k => {
                             var val = feat.properties ? feat.properties[k] : "";
                             row.push(val ? String(val).replace(/;/g, ',').replace(/\n/g, ' ') : "");
                         });
-                        
                         rows.push(row.join(";"));
                     } catch(e) {}
                 });
@@ -1145,11 +1180,14 @@
         function baixarDXF() {
             var hasRtk = memoria.lon.length > 0;
             var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel);
-            
-            if (!hasRtk && !hasLayers) { 
-                alert("Não há dados visíveis (RTK ou Camadas) para exportar."); 
-                return; 
-            }
+            var hasCAD = false;
+            cadLayerGroup.eachLayer(l => hasCAD = true);
+
+            if (!hasRtk && !hasLayers && !hasCAD) { alert("Não há dados visíveis para exportar."); return; }
+
+            var fmtOut = document.getElementById('out-formato').value;
+            var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; 
+            var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU;
 
             var dxf = "0\nSECTION\n2\nENTITIES\n";
             
@@ -1165,12 +1203,26 @@
                 }
             }
 
+            if (hasCAD) {
+                cadLayerGroup.eachLayer(layer => {
+                    if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                        var ll = layer.getLatLng();
+                        var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]);
+                        dxf += `0\nPOINT\n8\nCAD_PONTOS\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`;
+                    } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
+                        var latlngs = layer.getLatLngs()[0]; 
+                        dxf += "0\nPOLYLINE\n8\nCAD_DESENHO\n66\n1\n70\n1\n62\n2\n";
+                        latlngs.forEach(ll => {
+                             var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]);
+                             dxf += `0\nVERTEX\n8\nCAD_DESENHO\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`;
+                        });
+                        dxf += "0\nSEQEND\n";
+                    }
+                });
+            }
+
             if (hasLayers) {
                 var featuresClip = obterRecorteFeatures(); 
-                var fmtOut = document.getElementById('out-formato').value;
-                var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; 
-                var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU;
-
                 featuresClip.forEach(feat => {
                     var rings = extractRings(feat.geometry.coordinates, feat.geometry.type);
                     rings.forEach(ring => {
@@ -1212,8 +1264,10 @@
         function baixarGeoJSON() {
             var hasRtk = memoria.lon.length > 0;
             var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel);
+            var hasCAD = false;
+            cadLayerGroup.eachLayer(l => hasCAD = true);
             
-            if (!hasRtk && !hasLayers) { alert("Não há dados visíveis para exportar."); return; }
+            if (!hasRtk && !hasLayers && !hasCAD) { alert("Não há dados visíveis para exportar."); return; }
 
             var coords = [], features = [];
             
@@ -1226,6 +1280,17 @@
                     coords.push(coords[0]); 
                     features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: { Origem: "RTK_Perimetro" } }); 
                 }
+            }
+
+            if (hasCAD) {
+                cadLayerGroup.eachLayer(layer => {
+                    try {
+                        var f = layer.toGeoJSON();
+                        f.properties = f.properties || {};
+                        f.properties.Origem_GeoPonto = "CAD_Online";
+                        features.push(f);
+                    } catch(e) {}
+                });
             }
             
             if (hasLayers) {
