@@ -3092,3 +3092,426 @@
                 acionarSistemaDeDownloadFisicoPelaInterfaceArquivosDoDOMNativoAPI("Projeto_Global_Linhas_e_Poligonos_Topografia_Oficial_Pronta_Edicao_Master_Super_Extenso_Tudo.dxf", megaGigantescaStringDeEscritaContinuaParaGeraçãoDoFicheiroAutoCADBaseadoEmProtocoloASCII, "application/dxf");
             }
         }
+        /**
+         * ============================================================================
+         * BLOCO 11: GERADOR DOCGEO (CÁLCULOS AZIMUTAIS E EMISSÃO DE DOCUMENTOS A4)
+         * ============================================================================
+         */
+        
+        /**
+         * Motor Trigonométrico de Topografia Analítica
+         * Calcula o Azimute Magnético e a Distância Horizontal Euclidiana entre 2 pontos cartesianos.
+         */
+        function calcularAzimuteEDistanciaMatematica(coordenadaX1_Origem, coordenadaY1_Origem, coordenadaX2_Destino, coordenadaY2_Destino) { 
+            const comprimentoDeltaCatetoX = coordenadaX2_Destino - coordenadaX1_Origem;
+            const comprimentoDeltaCatetoY = coordenadaY2_Destino - coordenadaY1_Origem; 
+            
+            // Teorema de Pitágoras: a² + b² = c² (Distância)
+            const pitagorasCalculoDistanciaHorizontalDireta = Math.sqrt((comprimentoDeltaCatetoX * comprimentoDeltaCatetoX) + (comprimentoDeltaCatetoY * comprimentoDeltaCatetoY)); 
+            
+            // Arco Tangente (Math.atan2) retorna o ângulo em radianos do eixo X ao Ponto.
+            // Multiplicamos por (180 / PI) para converter radianos em Graus Matemáticos Decimais.
+            let grausGeometricosDirecionaisDecimais = Math.atan2(comprimentoDeltaCatetoX, comprimentoDeltaCatetoY) * (180 / Math.PI); 
+            
+            // Correção de Quadrante: O Azimute topográfico roda de 0 a 360 no sentido dos ponteiros do relógio a partir do Norte.
+            if (grausGeometricosDirecionaisDecimais < 0) {
+                grausGeometricosDirecionaisDecimais += 360; 
+            }
+            
+            // Conversão de Graus Decimais para o formato rigoroso GMS (Graus° Minutos' Segundos'')
+            const grauInteiroParaImpressao = Math.floor(grausGeometricosDirecionaisDecimais); 
+            const restoDoGrauDecimalParaCalculoMinutos = (grausGeometricosDirecionaisDecimais - grauInteiroParaImpressao) * 60;
+            const minutoInteiroParaImpressao = Math.floor(restoDoGrauDecimalParaCalculoMinutos); 
+            const restoDoMinutoDecimalParaCalculoSegundosFinal = (restoDoGrauDecimalParaCalculoMinutos - minutoInteiroParaImpressao) * 60;
+            
+            return { 
+                distanciaEscrita: pitagorasCalculoDistanciaHorizontalDireta.toFixed(2), 
+                azimuteEscrito: `${grauInteiroParaImpressao}° ${minutoInteiroParaImpressao.toString().padStart(2, '0')}' ${restoDoMinutoDecimalParaCalculoSegundosFinal.toFixed(2).padStart(5, '0')}"` 
+            }; 
+        }
+
+        /**
+         * Compilador Principal do Documento Técnico
+         * Lê todos os dados das abas, faz cálculos e cospe as matrizes num Template HTML pronto a imprimir.
+         */
+        function gerarDocumentoOficial(tipoArquivoDocumentalDesejado) {
+            
+            // Restrição Operacional: Sem um polígono fechado, não há imóvel.
+            if (memoriaTopografica.lon.length < 3) { 
+                alert("AVISO ESTRUTURAL DE ENGENHARIA: Um documento técnico de Laudo ou Memorial exige um perímetro de confinamento delimitado. Importe no mínimo 3 vértices topográficos para prosseguir."); 
+                return; 
+            }
+            
+            // 1. Resgate e Sanitização das Variáveis de Identificação (Aba 1)
+            const variaveisContextoFormularioGeral = {
+                proprietarioNome: document.getElementById('form-proprietario').value || "___________________________",
+                proprietarioCPF: document.getElementById('form-cpf-proprietario').value || "___________________",
+                imovelNome: document.getElementById('form-imovel').value || "___________________________",
+                municipioNome: document.getElementById('form-municipio').value || "___________________________",
+                matriculaNumero: document.getElementById('form-matricula').value || "___________________",
+                confrontantesGeral: document.getElementById('form-confrontantes').value || "propriedades vizinhas confrontantes de limites e estradas públicas",
+                tecnicoNome: document.getElementById('form-tecnico').value || "___________________________",
+                tecnicoFormacao: document.getElementById('form-formacao').value || "___________________",
+                tecnicoRegistro: document.getElementById('form-registro').value || "___________________",
+                tecnicoIncra: document.getElementById('form-incra').value || "__________",
+                tecnicoCPF: document.getElementById('form-cpf-tecnico').value || "___________________"
+            };
+            
+            // 2. Extração Formal de Grandezas Físicas
+            // 1 Hectare = 10.000 metros quadrados.
+            const valorCalculadoConversaoHectaresExtensoString = (variavelGlobalAreaCalculada / 10000).toFixed(4).replace('.', ','); 
+            const valorCalculadoConversaoMetrosAreaExtensoString = variavelGlobalAreaCalculada.toFixed(2).replace('.', ','); 
+            const valorCalculadoConversaoPerimetroExtensoString = variavelGlobalPerimetroCalculado.toFixed(2).replace('.', ',');
+            
+            // 3. Fabrico Dinâmico de Instância de Data Local
+            const arrayNomesDosMesesExtensoParaTextoOficial = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]; 
+            const objetoTemporalDataVirtualDoNavegador = new Date(); 
+            const stringDataFormalizadaLocalizadaParaDocumentos = `${objetoTemporalDataVirtualDoNavegador.getDate()} de ${arrayNomesDosMesesExtensoParaTextoOficial[objetoTemporalDataVirtualDoNavegador.getMonth()]} de ${objetoTemporalDataVirtualDoNavegador.getFullYear()}`;
+            
+            // 4. Projeção Vetorial Exclusiva para Relatório Impresso
+            // Documentos topográficos OBRIGAM que as tabelas de coordenadas apresentadas sejam cartesianas UTM (Metros).
+            const zonaBaseadaUTMExtraidaDoInput = document.getElementById('config-zona').value; 
+            const hemisferioBaseadoUTMExtraidoDoInput = document.getElementById('config-hemisferio').value === 'S' ? '+south' : ''; 
+            const templateStringDeSaidaEPSGOficialParaRelatorioUTM = `+proj=utm +zone=${zonaBaseadaUTMExtraidaDoInput} ${hemisferioBaseadoUTMExtraidoDoInput} +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs`; 
+            
+            let matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela = []; 
+            
+            for(let contadorIteratorGeralGlobalV1X3 = 0; contadorIteratorGeralGlobalV1X3 < memoriaTopografica.lon.length; contadorIteratorGeralGlobalV1X3++) { 
+                const vetorAjustadoDaMatriz = proj4("+proj=longlat +datum=WGS84 +no_defs", templateStringDeSaidaEPSGOficialParaRelatorioUTM, [memoriaTopografica.lon[contadorIteratorGeralGlobalV1X3], memoriaTopografica.lat[contadorIteratorGeralGlobalV1X3]]); 
+                matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.push({ x: vetorAjustadoDaMatriz[0], y: vetorAjustadoDaMatriz[1], z: memoriaTopografica.cotas[contadorIteratorGeralGlobalV1X3] }); 
+            }
+
+            // Variável Mestra que Conterá o HTML do Documento Final
+            let construtoHtmlDoDocumentoFinalRenderizadoNaMemoria = "";
+
+            // ------------------------------------------------------------------------------------
+            // DOCUMENTO 1: MEMORIAL DESCRITIVO (ESTILO INCRA)
+            // ------------------------------------------------------------------------------------
+            if (tipoArquivoDocumentalDesejado === 'memorial') {
+                construtoHtmlDoDocumentoFinalRenderizadoNaMemoria += `
+                    <div class="pagina-a4">
+                        <h2>MEMORIAL DESCRITIVO TÉCNICO CIRCUNSTANCIADO</h2>
+                        
+                        <table class="tabela-docgeo" style="margin-bottom:30px; line-height: 1.4;">
+                            <tr>
+                                <td style="text-align:left; width: 50%;"><strong>Proprietário (Requerente):</strong> ${variaveisContextoFormularioGeral.proprietarioNome}</td>
+                                <td style="text-align:left; width: 50%;"><strong>Área Fio Fechado:</strong> ${valorCalculadoConversaoHectaresExtensoString} hectares (${valorCalculadoConversaoMetrosAreaExtensoString} m²)</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align:left;"><strong>Identificação do Imóvel/Gleba:</strong> ${variaveisContextoFormularioGeral.imovelNome}</td>
+                                <td style="text-align:left;"><strong>Extensão do Perímetro:</strong> ${valorCalculadoConversaoPerimetroExtensoString} metros</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align:left;"><strong>Localização e Comarca (UF):</strong> ${variaveisContextoFormularioGeral.municipioNome}</td>
+                                <td style="text-align:left;"><strong>Número da Matrícula/CCIR:</strong> ${variaveisContextoFormularioGeral.matriculaNumero}</td>
+                            </tr>
+                        </table>
+                        
+                        <p style="text-align: justify; text-indent: 40px; line-height: 1.8; margin-bottom: 25px;">
+                            Inicia-se a descrição e demarcação perimetral deste imóvel no vértice referenciado por marco topográfico <strong>${memoriaTopografica.nomes[0]}</strong>, constituído e materializado pelas coordenadas UTM Planas cartesianas no sistema Norte <strong>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[0].y.toFixed(3).replace('.',',')} m</strong> e Este <strong>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[0].x.toFixed(3).replace('.',',')} m</strong>. Estas métricas analíticas encontram-se rigorosamente atreladas ao Meridiano Central pertinente ao fuso ${zonaBaseadaUTMExtraidaDoInput}, em sistema de datum geodésico referencial padronizado SIRGAS 2000, e fixando altitude/cota Z aproximada em <strong>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[0].z.toFixed(2).replace('.',',')} m</strong>. Partindo deste primeiro limite inicial demarcado, prossegue com os seguintes azimutes topográficos e respectivas distâncias analíticas em vetor horizontal, confrontando continuamente em toda a sua lateralidade ao longo do percurso com: ${variaveisContextoFormularioGeral.confrontantesGeral}, seguindo a exata e restrita demarcação geométrica natural a seguir tabelada e descrita:
+                        </p>
+                `;
+                
+                let gradeTabelaAnaliticaOficialInternaCentralDeProcessamentoDeDados = `
+                    <table class="tabela-docgeo">
+                        <thead>
+                            <tr>
+                                <th>Origem (De)</th>
+                                <th>Destino (Para)</th>
+                                <th>Azimute Magnético</th>
+                                <th>Distância (m)</th>
+                                <th>Eixo Este (X)</th>
+                                <th>Eixo Norte (Y)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                // Construção Sequencial dos Lados do Polígono
+                for (let ponteiroIterativoGeralDeLinha = 0; ponteiroIterativoGeralDeLinha < matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.length; ponteiroIterativoGeralDeLinha++) {
+                    const indiceDoPontoOrigemVertice = ponteiroIterativoGeralDeLinha; 
+                    const indiceDoPontoDestinoConsequenteVerticeSeguinte = (ponteiroIterativoGeralDeLinha + 1) % matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.length; 
+                    
+                    const objetoMatematicoExtracaoCalculadaAzimuteEDistancia = calcularAzimuteEDistanciaMatematica(
+                        matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoOrigemVertice].x, 
+                        matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoOrigemVertice].y, 
+                        matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoDestinoConsequenteVerticeSeguinte].x, 
+                        matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoDestinoConsequenteVerticeSeguinte].y
+                    );
+                    
+                    construtoHtmlDoDocumentoFinalRenderizadoNaMemoria += `
+                        <p style="text-align: justify; margin: 4px 0; line-height: 1.6;">
+                            Do ponto cravado <strong>${memoriaTopografica.nomes[indiceDoPontoOrigemVertice]}</strong> avança rumo ao vértice conseguinte <strong>${memoriaTopografica.nomes[indiceDoPontoDestinoConsequenteVerticeSeguinte]}</strong>, pelo azimute de <strong>${objetoMatematicoExtracaoCalculadaAzimuteEDistancia.azimuteEscrito}</strong> e na distância linear horizontal cravada em <strong>${objetoMatematicoExtracaoCalculadaAzimuteEDistancia.distanciaEscrita.replace('.',',')} metros</strong> diretos, atingindo assim a coordenada Norte <strong>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoDestinoConsequenteVerticeSeguinte].y.toFixed(3).replace('.',',')} m</strong> e Este <strong>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoDestinoConsequenteVerticeSeguinte].x.toFixed(3).replace('.',',')} m</strong>.
+                        </p>
+                    `;
+                    
+                    gradeTabelaAnaliticaOficialInternaCentralDeProcessamentoDeDados += `
+                        <tr>
+                            <td><strong>${memoriaTopografica.nomes[indiceDoPontoOrigemVertice]}</strong></td>
+                            <td><strong>${memoriaTopografica.nomes[indiceDoPontoDestinoConsequenteVerticeSeguinte]}</strong></td>
+                            <td>${objetoMatematicoExtracaoCalculadaAzimuteEDistancia.azimuteEscrito}</td>
+                            <td>${objetoMatematicoExtracaoCalculadaAzimuteEDistancia.distanciaEscrita.replace('.',',')}</td>
+                            <td>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoOrigemVertice].x.toFixed(3).replace('.',',')}</td>
+                            <td>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[indiceDoPontoOrigemVertice].y.toFixed(3).replace('.',',')}</td>
+                        </tr>
+                    `;
+                }
+
+                construtoHtmlDoDocumentoFinalRenderizadoNaMemoria += `
+                        <p style="text-align: justify; text-indent: 40px; margin-top: 25px; line-height: 1.8;">
+                            Alcançando o supracitado ponto terminal, que converge de forma absolutamente idêntica com o marco limítrofe de início <strong>${memoriaTopografica.nomes[0]}</strong>. Este fenómeno matemático encerra e clausura totalmente a topologia do perímetro, resultando numa mancha vetorial que circunscreve a dimensão e delimita as valências fundiárias legais.
+                        </p>
+                        
+                        <br>
+                        <h3 style="font-size:12pt; text-align: center; border-top: 1px solid #aaa; padding-top: 15px;">Quadro Cartesiano Resumo de Radiação</h3>
+                        ${gradeTabelaAnaliticaOficialInternaCentralDeProcessamentoDeDados}
+                        </tbody></table>
+                        
+                        <div class="caixa-assinatura">
+                            <p style="margin-bottom: 5px;">_________________________________________________________________________</p>
+                            <p style="margin: 2px 0;"><strong>${variaveisContextoFormularioGeral.tecnicoNome}</strong></p>
+                            <p style="margin: 2px 0;">Certificação Profissional: ${variaveisContextoFormularioGeral.tecnicoFormacao}</p>
+                            <p style="margin: 2px 0;">Identificação Pessoal Técnica no Conselho (CFT/CREA): ${variaveisContextoFormularioGeral.tecnicoRegistro} | Código de Credenciamento Federal: ${variaveisContextoFormularioGeral.tecnicoIncra}</p>
+                            <p style="margin-top: 25px;">Emissão e Impressão local: ${variaveisContextoFormularioGeral.municipioNome.split('-')[0].trim()}, aos ${stringDataFormalizadaLocalizadaParaDocumentos}.</p>
+                        </div>
+                    </div>
+                `;
+            } 
+            
+            // ------------------------------------------------------------------------------------
+            // DOCUMENTO 2: LAUDO TÉCNICO VISTORIA
+            // ------------------------------------------------------------------------------------
+            else if (tipoArquivoDocumentalDesejado === 'laudo') {
+                construtoHtmlDoDocumentoFinalRenderizadoNaMemoria += `
+                    <div class="pagina-a4">
+                        <h2 style="font-size: 16pt; margin-bottom: 40px;">LAUDO PERICIAL TÉCNICO DE CONSTATAÇÃO FÍSICA NO TERRENO E AVALIAÇÃO DE LIMITES GEORREFERENCIADOS</h2>
+                        
+                        <p style="text-align: justify; text-indent: 40px; margin-top:50px; line-height: 2;">
+                            Eu, Profissional Avaliador Signatário <strong>${variaveisContextoFormularioGeral.tecnicoNome}</strong>, cidadão, que me encontro perfeitamente habilitado para o rigor das minhas atribuições e actuações ao abrigo do título validado em <strong>${variaveisContextoFormularioGeral.tecnicoFormacao}</strong>, formal e regularmente identificado fiscalmente (CPF) pelo registo civil <strong>${variaveisContextoFormularioGeral.tecnicoCPF}</strong>, dispondo de todas as quotas de vistoria legal em dia junto do respetivo órgão máximo e supremo do conselho normativo regional sob o comprovativo nº <strong>${variaveisContextoFormularioGeral.tecnicoRegistro}</strong>,
+                        </p>
+
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2;">
+                            <strong>AQUI PRESTO DECLARAÇÃO E ATESTO POR COMPROMISSO DE HONRA</strong> profissional, e para os trâmites civis em vigência (submetido inclusivamente aos rigores de Falsidade Ideológica presentes no Código Penal), que no âmbito da minha atuação presencial conduzi ativamente as operações topométricas instrumentais de altíssima precisão por satélite GNSS, executando a planimetria integral relativa à poligonal e perímetro inerente.
+                        </p>
+
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2;">
+                            Foi assim possível confirmar in loco a presença real, incontestável e não conflituosa do traçado delimitante representativo do cadastro rural/urbano conhecido na região por <strong>${variaveisContextoFormularioGeral.imovelNome}</strong>, cujo detentor, legítimo usufrutuário ou proprietário requerente é a entidade singular de nomeação <strong>${variaveisContextoFormularioGeral.proprietarioNome}</strong>. A gleba física materializa-se ininterruptamente dentro do limite territorial da competência do fórum de <strong>${variaveisContextoFormularioGeral.municipioNome}</strong>.
+                        </p>
+
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2;">
+                            <strong>HOMOLOGO EM DEFINITIVO, PORTANTO</strong> que os dados geodésicos vertidos em ficheiro e que instruem e anexam este relatório culminam matematicamente e em perfeita harmonia perimétrica na área total útil exata de <strong>${valorCalculadoConversaoHectaresExtensoString} Hectares Computados</strong> (montante este equivalente e proporcional ao rácio isolado de exatos ${valorCalculadoConversaoMetrosAreaExtensoString} metros quadrados), delimitada no terreno por uma muralha invisível geométrica de confinamento numa extensão de vetor percorrido avaliada em estritos <strong>${valorCalculadoConversaoPerimetroExtensoString} metros de desenvolvimento</strong>.
+                        </p>
+
+                        <div class="caixa-assinatura" style="margin-top:160px;">
+                            <p style="margin-bottom: 5px;">_________________________________________________________________________</p>
+                            <p style="margin: 2px 0;">Identificação Pericial: <strong>${variaveisContextoFormularioGeral.tecnicoNome}</strong></p>
+                            <p style="margin: 2px 0;">Chancela de Especialista Legal RRT/ART Identificação: ${variaveisContextoFormularioGeral.tecnicoRegistro}</p>
+                            <p style="margin-top: 25px;">${variaveisContextoFormularioGeral.municipioNome.split('-')[0].trim()}, certificado ao rigor da data presente: ${stringDataFormalizadaLocalizadaParaDocumentos}.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ------------------------------------------------------------------------------------
+            // DOCUMENTO 3: CARTA DE ANUÊNCIA CONFRONTANTES
+            // ------------------------------------------------------------------------------------
+            else if (tipoArquivoDocumentalDesejado === 'anuencia') {
+                construtoHtmlDoDocumentoFinalRenderizadoNaMemoria += `
+                    <div class="pagina-a4">
+                        <h2>INSTRUMENTO DECLARATÓRIO DE CARTA DE ANUÊNCIA (CONCORDÂNCIA DE VIZINHANÇA) E PACIFICAÇÃO DE DIVISAS</h2>
+                        
+                        <p style="text-align: justify; text-indent: 40px; margin-top:40px; line-height: 2;">
+                            Pela via formal desta documentação unificada, e firmando compromisso nas tabelas inferiores, nós, os aqui apostados indivíduos com atestada idoneidade, na exclusiva qualidade civil representativa de atuais proprietários, confinantes passivos, ou legítimos usufrutuários do espaço terrestre confrontante limítrofe à parcela matriz topográfica vinculada no presente contexto à figura representativa do senhor outorgante e requerente: <strong>${variaveisContextoFormularioGeral.proprietarioNome}</strong>, detentor portador do documento cívico central: <strong>${variaveisContextoFormularioGeral.proprietarioCPF}</strong>. Entidade esta cujas raízes imobiliárias neste ato referem-se à titularidade da exploração da parcela com a vulgar denominação cadastral de <strong>${variaveisContextoFormularioGeral.imovelNome}</strong>, parcela esta cravada na jurisdição e domínio do perímetro da entidade da freguesia de: <strong>${variaveisContextoFormularioGeral.municipioNome}</strong>.
+                        </p>
+                        
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2;">
+                            <strong>SUBSCREVEMOS PARA OS DEVIDOS EFEITOS A NOSSA TOTAL E IRREVOGÁVEL DECLARAÇÃO</strong> de que acompanhamos ou não possuímos nenhuma oposição em face das diligências técnicas efetuadas in loco, pelo agente devidamente qualificado como engenheiro(a)/técnico(a) geocartógrafo(a) mestre <strong>${variaveisContextoFormularioGeral.tecnicoNome}</strong> (Identificado profissionalmente sob o Alvará n.º: ${variaveisContextoFormularioGeral.tecnicoRegistro}). Perante esta aferição que materializou no terreno marcos, valas, vedações ou pinos metálicos divisores das propriedades fronteiriças de nossa administração direta, atestamos por expresso em comum acordo cível que <strong>NÃO TEMOS A OPOR, CONCORDAMOS E CONCEDEMOS A DEVIDA ANUÊNCIA PACÍFICA</strong> a todas as medidas estipuladas e vetores geodésicos demarcados no rol do levantamento que sustenta o Memorial Analítico Descritivo deste processo, que resulta isento de conflito territorial pendente.
+                        </p>
+
+                        <p style="text-align: center; margin-top: 30px; font-weight: bold; text-transform: uppercase;">Lista dos Signatários Anuentes Lote a Lote:</p>
+                        
+                        <table class="tabela-docgeo" style="margin-top: 10px; line-height: 3; font-size: 11pt;">
+                            <thead>
+                                <tr>
+                                    <th width="40%">Identificação Civil (Nome do Vizinho)</th>
+                                    <th width="20%">Documento RG / CPF</th>
+                                    <th width="40%">Assinatura (Para Reconhecimento em Cartório)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="height:70px;"></td><td></td><td></td></tr>
+                                <tr><td style="height:70px;"></td><td></td><td></td></tr>
+                                <tr><td style="height:70px;"></td><td></td><td></td></tr>
+                                <tr><td style="height:70px;"></td><td></td><td></td></tr>
+                                <tr><td style="height:70px;"></td><td></td><td></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="caixa-assinatura" style="margin-top:80px;">
+                            <p>Lavrado o presente título de harmonia em: ${variaveisContextoFormularioGeral.municipioNome.split('-')[0].trim()}, na data solene exarada de: ${stringDataFormalizadaLocalizadaParaDocumentos}.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ------------------------------------------------------------------------------------
+            // DOCUMENTO 4: REQUERIMENTO A AVERBAÇÃO
+            // ------------------------------------------------------------------------------------
+            else if (tipoArquivoDocumentalDesejado === 'requerimento') {
+                construtoHtmlDoDocumentoFinalRenderizadoNaMemoria += `
+                    <div class="pagina-a4">
+                        <h2>PETIÇÃO DE REQUERIMENTO PARA REGISTO PÚBLICO E EVENTUAIS TRAMITAÇÕES NOTARIAIS DE RETIFICAÇÃO</h2>
+                        
+                        <p style="text-align: justify; margin-top:50px; font-size:13pt; margin-bottom: 30px;"><strong>Ao Exmo. Sr. Oficial Maior Titular da Conservatória e Cartório de Registo Geral de Predial Territorial adscrito à jurisdição da Comarca respectiva de: ${variaveisContextoFormularioGeral.municipioNome.split('-')[0].trim()}</strong>,</p>
+                        
+                        <p style="text-align: justify; text-indent: 40px; line-height: 2.2;">
+                            O particular a seguir elencado, doravante peticionante nesta acção direta cartorial extrajudicial e de carácter administrativo contínuo, identificado singular e exatissimamente sob a nomenclatura de nascimento referencial: <strong>${variaveisContextoFormularioGeral.proprietarioNome}</strong>, documentado ao abrigo da numeração matriz fiscal da nação que responde pelo Cadastro Identificador (CPF/NIF): <strong>${variaveisContextoFormularioGeral.proprietarioCPF}</strong>. Peticiona em instância de direito civil irrepreensível, assumindo o papel inequívoco, e por lei suportado, como sendo o principal e mais importante titular do trato fundiário parcelado da terra bruta reconhecida na comunidade da qual advém sob a designação global de prédio/parcela nominada: <strong>${variaveisContextoFormularioGeral.imovelNome}</strong>. A mencionada propriedade faz-se inscrever devidamente num assento oficial já constante nestes vossos livros conservatórios mestre ao abrigo fidedigno da numeração Matrícula/Artigo (Livro RGI/Finanças Predial): <strong>${variaveisContextoFormularioGeral.matriculaNumero}</strong>. 
+                        </p>
+                        
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2.2;">
+                            Deste modo cristalino, e servindo-me da suprema veneração atribuída às instâncias de escrutínio burocrático e normativo do Vosso Gabinete Público Estadual, deduzo aqui o presente e inevitável <strong>REQUERIMENTO TÉCNICO FORMAL</strong>. Pretende o signatário que V. Exa. proceda a todas as análises criteriosas aplicáveis aos calhamaços métricos, e, sendo assim do entendimento legal do escrutínio, promova subsequentemente a devida anotação de averbamento escritural atualizada, a potencial retificação matricial de confrontantes velhos da certidão ultrapassada, homologando no acervo do registo o Novo Processo Georreferenciado Topográfico moderno e milimétrico constante das memórias e documentações agrafadas ao corpo deste pedido fundamental.
+                        </p>
+                        
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2.2;">
+                            A atestar e ratificar a veracidade rigorosa da planta agora entregue aos vossos cuidados, colide a idoneidade, chancela e o peso profissional assinado e conferido pela responsabilidade de medição apurada do técnico <strong>${variaveisContextoFormularioGeral.tecnicoNome}</strong> (Munido dos seus credenciamentos de engenharia/técnicos ordinais base n.º: ${variaveisContextoFormularioGeral.tecnicoRegistro}). A dimensão do objeto alvo atinge em fecho de perímetro a capacidade e o cômputo superficial incontestável estritamente medido como perfazendo os exatos e fechados montantes finais de dimensão plana estendida em conformidade: <strong>${valorCalculadoConversaoMetrosAreaExtensoString} m²</strong> (traduzindo-se isto e transpondo analiticamente num rácio para métrica agrícola paralela em totais exatos: ${valorCalculadoConversaoHectaresExtensoString} hectares reais no local).
+                        </p>
+                        
+                        <p style="text-align: justify; text-indent: 40px; margin-top:35px; line-height: 2.2; font-weight: bold; font-size: 13pt;">
+                            Sendo isto do maior interesse pessoal de direito garantido por constituição, aguarda nesta esperança a melhor atenção e o salutar e justo provimento favorável ao Despacho final.
+                        </p>
+                        
+                        <div class="caixa-assinatura" style="margin-top:140px;">
+                            <p style="margin-bottom: 5px;">_________________________________________________________________________</p>
+                            <p style="margin: 2px 0;">Representante Petição Inicial do Processo e Interesse de Ação Civil: <strong>${variaveisContextoFormularioGeral.proprietarioNome}</strong></p>
+                            <p style="margin: 2px 0;">Capacidade outorgada declarada: Titular Fundiário Direto Expresso.</p>
+                            <p style="margin-top: 25px;">${variaveisContextoFormularioGeral.municipioNome.split('-')[0].trim()}, formalizado a despachar na data liminar de: ${stringDataFormalizadaLocalizadaParaDocumentos}.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ------------------------------------------------------------------------------------
+            // DOCUMENTO 5: CROQUI / PLANTA TÉCNICA A4 (GERADA POR HTML2CANVAS DA API MAPA)
+            // ------------------------------------------------------------------------------------
+            else if (tipoArquivoDocumentalDesejado === 'croqui') {
+                
+                // Overlay de Loading no ecran para o utilizador perceber que a máquina gráfica está a processar a foto
+                const divAlvoRenderizacaoDOMHtmlGlobalDoSistema = document.getElementById('area-renderizacao-docgeo');
+                divAlvoRenderizacaoDOMHtmlGlobalDoSistema.innerHTML = `
+                    <div style="display:flex; justify-content:center; align-items:center; height:100vh;">
+                        <h2 style="color:var(--cor-texto-claro); text-align:center; padding: 25px; background-color: rgba(0,0,0,0.8); border-radius: 8px; border-width: 2px; border-style: solid; border-color: var(--cor-destaque-primario);">
+                            📸 A capturar fotografia matricial WebGL do Mapa Base para o Documento de Impressão...<br>
+                            <span style="font-size: 12px; font-weight: 300; display: block; margin-top: 10px;">(Por favor, não manipule a janela de renderização, este processo de motor gráfico pode tomar alguns segundos complexos).</span>
+                        </h2>
+                    </div>
+                `;
+                document.getElementById('wrapper-preview-documentos').style.display = 'block';
+                
+                // Desligamos os botões flutuantes de Zoom do Leaflet nativo para não ficarem "impressos" na folha e estragarem o croqui.
+                const containerControlesDoLeafletInvisivelFoto = document.querySelector('.leaflet-control-container');
+                if(containerControlesDoLeafletInvisivelFoto) containerControlesDoLeafletInvisivelFoto.style.display = 'none';
+
+                // Disparo da API de Snapshot
+                // O Parâmetro useCORS é extremamente mandatório pois permite trazer a Ortofoto do servidor da Google.
+                html2canvas(document.getElementById('div-mapa-leaflet'), { useCORS: true, allowTaint: true }).then(fotografiaCanvasGeradaObjetoHtml => {
+                    
+                    // Retoma os botões ao ecrã para o mapa não ficar partido
+                    if(containerControlesDoLeafletInvisivelFoto) containerControlesDoLeafletInvisivelFoto.style.display = 'block';
+                    
+                    // Converte a tag Canvas em formato MIME base64 de Imagem PNG (Renderizável universal)
+                    const imagemGraficaBase64PNGFormatConvertidaProntaParaDocumento = fotografiaCanvasGeradaObjetoHtml.toDataURL("image/png");
+                    
+                    // FABRICAÇÃO DA TABELA LATERAL (A Tabela encolhe para um máximo de 36 linhas para não extrupar o limite físico visual de um folio de Papel A4. Acima disso usamos o anexo memorial).
+                    let construtoTabelaLateralHTMLTruncadaParaFolhaA4 = `<table class="tabela-docgeo" style="font-size:7pt; margin-top:0;"><thead><tr><th>ID</th><th>Coord E (X)</th><th>Coord N (Y)</th><th>Azim.</th><th>Dist(m)</th></tr></thead><tbody>`;
+                    
+                    const limiteRigorosoLogicoVisualA4EsteticaMaxima = Math.min(matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.length, 36); 
+                    
+                    for(let iteradorLogicoLimitadoMatematicaTrigonometria = 0; iteradorLogicoLimitadoMatematicaTrigonometria < limiteRigorosoLogicoVisualA4EsteticaMaxima; iteradorLogicoLimitadoMatematicaTrigonometria++) {
+                        
+                        const azimuteMagicaDistanciaDaTrigonometriaInterna = calcularAzimuteEDistanciaMatematica(
+                            matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[iteradorLogicoLimitadoMatematicaTrigonometria].x, 
+                            matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[iteradorLogicoLimitadoMatematicaTrigonometria].y, 
+                            matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[(iteradorLogicoLimitadoMatematicaTrigonometria + 1) % matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.length].x, 
+                            matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[(iteradorLogicoLimitadoMatematicaTrigonometria + 1) % matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.length].y
+                        );
+                        
+                        construtoTabelaLateralHTMLTruncadaParaFolhaA4 += `
+                            <tr>
+                                <td>${memoriaTopografica.nomes[iteradorLogicoLimitadoMatematicaTrigonometria]}</td>
+                                <td>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[iteradorLogicoLimitadoMatematicaTrigonometria].x.toFixed(2)}</td>
+                                <td>${matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela[iteradorLogicoLimitadoMatematicaTrigonometria].y.toFixed(2)}</td>
+                                <td>${azimuteMagicaDistanciaDaTrigonometriaInterna.azimuteEscrito.split(' ')[0]}</td>
+                                <td>${azimuteMagicaDistanciaDaTrigonometriaInterna.distanciaEscrita}</td>
+                            </tr>
+                        `;
+                    }
+                    construtoTabelaLateralHTMLTruncadaParaFolhaA4 += `</tbody></table>`;
+                    
+                    if (matrizMatematicaDeCoordenadasPlanasProntasParaImpressaoTabela.length > 36) {
+                        construtoTabelaLateralHTMLTruncadaParaFolhaA4 += `<p style="font-size:6.5pt; text-align:center; color: #555555; margin-top: 5px;"><em>(A grelha coordenada sofreu um truncamento visual devido a restrições limitantes da dimensão do fólio A4 da Planta. Deve analisar e consultar obrigatoriamente a peça anexa do Memorial Descritivo Oficial em toda a sua amplitude para verificar o desdobramento global do vértice V37 adiante e os demais pontos do polígono topográfico).</em></p>`;
+                    }
+
+                    // ASSEMBLAGEM DO MASTER LAYOUT (Utilizamos estruturas FlexBox restritas a 210x297mm para que a impressora caseira não destrua o Layout Profissional)
+                    const documentoCompletoMestreLayoutDePranchaFinalA4 = `
+                        <div class="pagina-a4" style="display:flex; flex-direction:column; padding-top:10mm; padding-right:10mm; padding-bottom:10mm; padding-left:10mm; min-height: 297mm; height: 297mm;">
+                            <h2 style="font-size:14pt; margin-bottom:15px; border-bottom-width: 3px; border-bottom-style: solid; border-bottom-color: #000000;">PLANTA FÍSICA E CROQUI DE LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO EM ESTRUTURA LOCAL A4</h2>
+                            
+                            <div style="flex-grow:1; flex-shrink: 1; flex-basis: 0%; position:relative; border-width:4px; border-style:solid; border-color:#000000; padding:2px; height: 50%; display: flex; align-items: stretch; justify-content: stretch;">
+                                <img src="${imagemGraficaBase64PNGFormatConvertidaProntaParaDocumento}" style="width:100%; height:100%; object-fit:cover;">
+                                
+                                <div style="position:absolute; top:15px; right:15px; width:50px; height:50px; background-color:white; border:2px solid #000000; text-align:center; line-height:50px; font-weight:bold; font-size:18px; border-radius:50%; box-shadow:3px 3px 15px rgba(0,0,0,0.8);">N▲</div>
+                                
+                                <div style="position:absolute; bottom:15px; left:15px; background-color:rgba(255,255,255,0.95); border:1px solid #000000; padding-top:6px; padding-right:10px; padding-bottom:6px; padding-left:10px; font-size:10pt; font-weight:bold; text-transform: uppercase;">A BASE E TODOS OS CÁLCULOS ANALÍTICOS DE MEDIÇÃO ENCONTRAM-SE FIXADOS EM SISTEMA MÉTRICO PLANAR PADRÃO UTM. DATUM MESTRE: SIRGAS 2000 - ${zonaBaseadaUTMExtraidaDoInput}${hemisferioBaseadoUTMExtraidoDoInput}</div>
+                            </div>
+                            
+                            <div style="display:flex; flex-direction:row; gap:15px; margin-top:15px; height: 35%;">
+                                
+                                <div style="flex-grow: 1.2; flex-shrink: 1; flex-basis: 0%; overflow:hidden;">
+                                    ${construtoTabelaLateralHTMLTruncadaParaFolhaA4}
+                                </div>
+                                
+                                <div style="flex-grow: 1.8; flex-shrink: 1; flex-basis: 0%;" class="selo-croqui-tecnico">
+                                    <div style="grid-column: span 3; text-align:center; font-weight:bold; font-size:13pt; border-bottom-width:3px; border-bottom-style:solid; border-bottom-color:#000000; padding-bottom:8px; margin-bottom: 8px;">DADOS CADASTRAIS GEORREFERENCIAIS E RESPONSABILIDADES TÉCNICAS RRT</div>
+                                    
+                                    <div><strong>Imóvel/Local:</strong></div><div style="grid-column: span 2">${variaveisContextoFormularioGeral.imovelNome}</div>
+                                    <div><strong>Proprietário:</strong></div><div style="grid-column: span 2">${variaveisContextoFormularioGeral.proprietarioNome}</div>
+                                    <div><strong>Comarca Atendida:</strong></div><div style="grid-column: span 2">${variaveisContextoFormularioGeral.municipioNome}</div>
+                                    <div><strong>Nº Matrícula Base:</strong></div><div style="grid-column: span 2">${variaveisContextoFormularioGeral.matriculaNumero}</div>
+                                    
+                                    <div style="grid-column: span 3; margin-top: 5px; margin-bottom: 5px; height: 1px; background-color: #999999;"></div>
+
+                                    <div><strong>Cômputo da Área Vetorial Exata:</strong></div><div style="grid-column: span 2; font-weight: bold; font-size: 11pt; color: #000;">${valorCalculadoConversaoHectaresExtensoString} Hectares (${valorCalculadoConversaoMetrosAreaExtensoString} m²)</div>
+                                    <div><strong>Circunscrição Limite Linear:</strong></div><div style="grid-column: span 2">${valorCalculadoConversaoPerimetroExtensoString} Metros no Vector Linear</div>
+                                    
+                                    <div style="grid-column: span 3; border-top-width:2px; border-top-style:dashed; border-top-color:#000000; margin-top: 8px; padding-top: 8px;"></div>
+                                    
+                                    <div><strong>Homologador Técnico Oficial Responsável:</strong></div><div style="grid-column: span 2">${variaveisContextoFormularioGeral.tecnicoNome}</div>
+                                    <div><strong>Estatuto e Formação Académica do Avaliador:</strong></div><div style="grid-column: span 2">${variaveisContextoFormularioGeral.tecnicoFormacao}</div>
+                                    <div><strong>Identificação Institucional Fisco/CFT:</strong></div><div style="grid-column: span 2; font-weight: bold;">${variaveisContextoFormularioGeral.tecnicoRegistro}</div>
+                                    
+                                    <div style="grid-column: span 3; text-align:center; margin-top:45px; font-size: 11pt;">
+                                        _________________________________________________________________<br>Firma e Assinatura Legível Oficial do Profissional Responsável<br>
+                                        <span style="font-size:9pt; margin-top: 8px; display: block;">Documento Geográfico Exarado e Aprovado pelo Motor em data de: ${stringDataFormalizadaLocalizadaParaDocumentos}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    divAlvoRenderizacaoDOMHtmlGlobalDoSistema.innerHTML = documentoCompletoMestreLayoutDePranchaFinalA4;
+                }).catch(erroFatalDeCorsGraphicCrossDomainBrowserExcecaoSecurityException => { 
+                    alert("Atenção Crítica Operacional: O protocolo de segurança do seu Navegador (CORS Policy Web Security Cross-Domain) impediu de fotografar os mosaicos geográficos da Imagem Base em Alta Resolução Satélite proveniente do Google Server Architecture. \n\nSolução de Engenharia: Alterne momentaneamente e regresse o tema visual da ferramenta para o 'Mosaico Mapa CAD Escuro (Dark Mode Base)' utilizando o comando superior na barra lateral CAD e processe este pedido gerador de Croqui A4 de Topografia mais uma vez."); 
+                    if(containerControlesDoLeafletInvisivelFoto) containerControlesDoLeafletInvisivelFoto.style.display = 'block'; 
+                    document.getElementById('wrapper-preview-documentos').style.display = 'none';
+                });
+                return; // Early return imperativo para evitar que o bloco final atropele a promessa assíncrona da câmara de Snapshot Canvas em andamento no motor gráfico background Worker Thread process.
+            }
+
+            // Exibir a Div Principal de Preview Overlay Com a Barra Superior de Imprimir na Interface Gráfica do Utilizador (Para todos os documentos que não são imagem)
+            document.getElementById('area-renderizacao-docgeo').innerHTML = construtoHtmlDoDocumentoFinalRenderizadoNaMemoria;
+            document.getElementById('wrapper-preview-documentos').style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>
