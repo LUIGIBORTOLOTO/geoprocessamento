@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>LuiGIS 21:53</title>
+    <title>LuiGIS v3.1 + v8.0 | Ultimate Fusion Edition MAX V2</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,7 +84,6 @@
 
         .etiqueta-mapa { background: rgba(0,0,0,0.7); border: 1px solid #4fc1ff; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; margin-left: 10px; box-shadow: none;}
 
-        /* CSS POPUP DO SHAPEFILE */
         .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--bg-card) !important; color: var(--text-light) !important; border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
         .leaflet-popup-content { margin: 10px; width: auto !important; min-width: 200px; }
         .popup-table { width: 100%; border-collapse: collapse; font-size: 10px; font-family: 'Inter', sans-serif; }
@@ -135,7 +134,7 @@
     <aside id="left-sidebar">
         <div class="header">
             <h1><svg width="20" height="20" viewBox="0 0 100 100"><rect width="100" height="100" rx="8" fill="#007acc" /><circle cx="50" cy="50" r="30" stroke="white" stroke-width="6" fill="none"/></svg> LuiGIS DocGEO</h1>
-            <span style="font-size:10px; color:#aaa; font-weight:bold;">v3.1 + v8.0 MAX</span>
+            <span style="font-size:10px; color:#aaa; font-weight:bold;">v3.1 + v8.0 MAX V2</span>
         </div>
 
         <div class="tabs">
@@ -249,10 +248,10 @@
 
             <div class="card" style="text-align: center;">
                 <div class="card-title">Filtrar Atributos do SHP</div>
-                <p style="font-size: 9px; color: var(--text-muted); margin: 5px 0 0 0;">O que você marcar aqui será mostrado no Pop-up e exportado no CSV/GeoJSON.</p>
+                <p style="font-size: 9px; color: var(--text-muted); margin: 5px 0 0 0;">O que você marcar aqui será exportado no CSV, GeoJSON e centralizado no arquivo DXF.</p>
                 <div style="display:flex; justify-content:center; gap: 10px; margin: 8px 0;">
-                    <button class="btn btn-outline btn-small" onclick="marcarTodasColunas(true)">Tudo</button>
-                    <button class="btn btn-outline btn-small" onclick="marcarTodasColunas(false)">Nada</button>
+                    <button class="btn btn-outline btn-small" onclick="marcarTodasColunas(true)">Marcar Tudo</button>
+                    <button class="btn btn-outline btn-small" onclick="marcarTodasColunas(false)">Limpar Tudo</button>
                 </div>
                 <div id="filtro-colunas-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 180px; overflow-y: auto; padding: 10px; background: #121212; border: 1px solid var(--border); border-radius: 4px;">
                     <p style="font-size: 10px; color: #555; width: 100%; text-align: center; margin: 0;">Importe um arquivo SHP/ZIP na aba CAD para ver as colunas e atributos.</p>
@@ -307,15 +306,14 @@
                         <label>1. Escolher Bloco Vetorial</label>
                         <select id="cad-block-type">
                             <option value="default">📍 Ponto Livre</option>
-                            <option value="tree">🌳 Árvore (Octógono 4m)</option>
-                            <option value="sewer">🕳️ Bueiro (Quadrado 1.5m)</option>
-                            <option value="light">⚡ Poste (Losango)</option>
+                            <option value="tree">🌳 Árvore Detalhada</option>
+                            <option value="sewer">🕳️ Bueiro/Grelha</option>
+                            <option value="light">⚡ Poste de Luz</option>
                         </select>
                     </div>
-                    <div><label>Cor</label><input type="color" id="cad-color" value="#0098ff" style="height:32px; padding:0; border:none; cursor:pointer;"></div>
                 </div>
                 <button class="btn btn-outline btn-block" style="margin-top:5px; border-color:var(--accent); color:var(--accent);" onclick="ativarDesenhoBloco()">📍 2. CLIQUE AQUI E DEPOIS NO MAPA</button>
-                <button class="btn btn-outline btn-small btn-block" style="margin-top:5px; border-color:var(--danger); color:var(--danger);" onclick="limparCAD()">🗑️ Apagar Desenho</button>
+                <button class="btn btn-outline btn-small btn-block" style="margin-top:5px; border-color:var(--danger); color:var(--danger);" onclick="limparCAD()">🗑️ Apagar Todos os Desenhos</button>
             </div>
 
             <div class="card" style="border-color: var(--accent);">
@@ -347,6 +345,7 @@
 
             <div class="card" style="flex-grow: 1; padding: 0; border: none; background: transparent;">
                 <label style="margin-bottom: 5px; color:#fff; font-size:12px;">GESTOR DE CAMADAS</label>
+                <p style="font-size:9px; color:#aaa; margin:0 0 10px 0;">O que estiver oculto (olhinho fechado) NÃO será exportado.</p>
                 <div id="camadas-dinamicas" style="display:flex; flex-direction:column; overflow-y: auto;">
                     <p style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 10px;">Nenhuma camada gerada.</p>
                 </div>
@@ -376,7 +375,6 @@
         map.pm.setGlobalOptions({ snappable: true, snapDistance: 20, snapMiddle: true, allowSelfIntersection: false });
 
         var cadLayerGroup = L.featureGroup().addTo(map);
-        document.getElementById('cad-color').addEventListener('change', e => map.pm.setPathOptions({ color: e.target.value, fillColor: e.target.value, fillOpacity: 0.2 }));
         map.pm.setPathOptions({ color: '#0098ff', fillColor: '#0098ff', fillOpacity: 0.2 });
 
         function atualizarSnap() { var active = document.getElementById('cad-snap-toggle').checked; var dist = parseInt(document.getElementById('cad-snap').value) || 20; map.pm.setGlobalOptions({ snappable: active, snapDistance: dist }); }
@@ -388,36 +386,57 @@
         }
 
         function criarBlocoVetorial(latlng, tipo) {
-            const metrosLat = 1 / 111320;
-            const metrosLng = 1 / (111320 * Math.cos(latlng.lat * Math.PI / 180));
-            let pts = [];
+            const mLat = 1 / 111320;
+            const mLng = 1 / (111320 * Math.cos(latlng.lat * Math.PI / 180));
+            let group = L.featureGroup();
 
             if (tipo === 'tree') {
-                for(let i=0; i<8; i++) {
-                    let angle = (i * 45) * Math.PI / 180;
-                    pts.push([latlng.lat + (2 * Math.sin(angle) * metrosLat), latlng.lng + (2 * Math.cos(angle) * metrosLng)]);
+                let ptsCopa = [];
+                for(let i=0; i<=36; i++) {
+                    let a = i * 10 * Math.PI / 180;
+                    let rOffset = (i % 2 === 0) ? 2.5 : 1.8; 
+                    ptsCopa.push([latlng.lat + (rOffset * Math.sin(a) * mLat), latlng.lng + (rOffset * Math.cos(a) * mLng)]);
                 }
-                return L.polygon(pts, {color: '#4caf50', weight: 2, fillColor: '#4caf50', fillOpacity: 0.4});
+                L.polygon(ptsCopa, {color: '#2e7d32', weight: 1.5, fillColor: '#4caf50', fillOpacity: 0.3}).addTo(group);
+                
+                let ptsTronco = [];
+                for(let i=0; i<=16; i++) {
+                    let a = i * 22.5 * Math.PI / 180;
+                    ptsTronco.push([latlng.lat + (0.4 * Math.sin(a) * mLat), latlng.lng + (0.4 * Math.cos(a) * mLng)]);
+                }
+                L.polygon(ptsTronco, {color: '#3e2723', weight: 2, fillColor: '#5d4037', fillOpacity: 0.8}).addTo(group);
+                
+                L.polyline([[latlng.lat + 0.8*mLat, latlng.lng], [latlng.lat - 0.8*mLat, latlng.lng]], {color:'#000', weight:1}).addTo(group);
+                L.polyline([[latlng.lat, latlng.lng + 0.8*mLng], [latlng.lat, latlng.lng - 0.8*mLng]], {color:'#000', weight:1}).addTo(group);
+                return group;
             }
             if (tipo === 'sewer') {
-                let r = 0.75;
-                pts = [
-                    [latlng.lat + r*metrosLat, latlng.lng - r*metrosLng],
-                    [latlng.lat + r*metrosLat, latlng.lng + r*metrosLng],
-                    [latlng.lat - r*metrosLat, latlng.lng + r*metrosLng],
-                    [latlng.lat - r*metrosLat, latlng.lng - r*metrosLng]
-                ];
-                return L.polygon(pts, {color: '#808080', weight: 2, fillColor: '#808080', fillOpacity: 0.6});
+                let r = 0.6; 
+                let externo = [ [latlng.lat + r*mLat, latlng.lng - r*mLng], [latlng.lat + r*mLat, latlng.lng + r*mLng], [latlng.lat - r*mLat, latlng.lng + r*mLng], [latlng.lat - r*mLat, latlng.lng - r*mLng] ];
+                L.polygon(externo, {color: '#555', weight: 2, fillColor: '#9e9e9e', fillOpacity: 0.5}).addTo(group);
+                
+                let rIn = 0.45;
+                let interno = [ [latlng.lat + rIn*mLat, latlng.lng - rIn*mLng], [latlng.lat + rIn*mLat, latlng.lng + rIn*mLng], [latlng.lat - rIn*mLat, latlng.lng + rIn*mLng], [latlng.lat - rIn*mLat, latlng.lng - rIn*mLng] ];
+                L.polygon(interno, {color: '#333', weight: 1, fillOpacity: 0}).addTo(group);
+                
+                L.polyline([[latlng.lat + rIn*mLat, latlng.lng], [latlng.lat - rIn*mLat, latlng.lng]], {color:'#333', weight:1}).addTo(group);
+                L.polyline([[latlng.lat, latlng.lng + rIn*mLng], [latlng.lat, latlng.lng - rIn*mLng]], {color:'#333', weight:1}).addTo(group);
+                return group;
             }
             if (tipo === 'light') {
-                let r = 0.5;
-                pts = [
-                    [latlng.lat + r*metrosLat, latlng.lng],
-                    [latlng.lat, latlng.lng + r*metrosLng],
-                    [latlng.lat - r*metrosLat, latlng.lng],
-                    [latlng.lat, latlng.lng - r*metrosLng]
-                ];
-                return L.polygon(pts, {color: '#ffeb3b', weight: 2, fillColor: '#ffeb3b', fillOpacity: 0.8});
+                let ptsBase = [];
+                for(let i=0; i<=16; i++) {
+                    let a = i * 22.5 * Math.PI / 180;
+                    ptsBase.push([latlng.lat + (0.3 * Math.sin(a) * mLat), latlng.lng + (0.3 * Math.cos(a) * mLng)]);
+                }
+                L.polygon(ptsBase, {color: '#fbc02d', weight: 2, fillColor: '#fff176', fillOpacity: 0.8}).addTo(group);
+                
+                let rHaste = 0.8;
+                L.polyline([[latlng.lat + rHaste*mLat, latlng.lng], [latlng.lat - rHaste*mLat, latlng.lng]], {color:'#fbc02d', weight:2}).addTo(group);
+                L.polyline([[latlng.lat, latlng.lng + rHaste*mLng], [latlng.lat, latlng.lng - rHaste*mLng]], {color:'#fbc02d', weight:2}).addTo(group);
+                L.polyline([[latlng.lat + 0.6*mLat, latlng.lng + 0.6*mLng], [latlng.lat - 0.6*mLat, latlng.lng - 0.6*mLng]], {color:'#fbc02d', weight:1}).addTo(group);
+                L.polyline([[latlng.lat + 0.6*mLat, latlng.lng - 0.6*mLng], [latlng.lat - 0.6*mLat, latlng.lng + 0.6*mLng]], {color:'#fbc02d', weight:1}).addTo(group);
+                return group;
             }
             return null;
         }
@@ -434,19 +453,21 @@
                         layer.addTo(map);
                     }
                 } else {
-                    layer.setIcon(L.circleMarker(layer.getLatLng(), {radius:5, color: document.getElementById('cad-color').value, fillColor: '#111', fillOpacity: 1}));
+                    layer.setIcon(L.circleMarker(layer.getLatLng(), {radius:4, color: '#ff0000', fillColor: '#fff', fillOpacity: 1}));
                 }
             }
             cadLayerGroup.addLayer(layer);
         });
 
-        function limparCAD() { if(confirm("Apagar desenhos CAD da tela?")) cadLayerGroup.clearLayers(); }
+        function limparCAD() { if(confirm("Apagar todos os desenhos CAD da tela?")) cadLayerGroup.clearLayers(); }
 
         var memoria = { nomes: [], cotas: [], lon: [], lat: [] };
         var gerenciadorCamadas = [];
         var camadaIdCounter = 0;
         
-        // GESTÃO DAS COLUNAS (ATRIBUTOS SHP)
+        // REGISTRO INICIAL DA CAMADA DE CAD
+        gerenciadorCamadas.push({ id: 'cad_layer', nome: '✏️ Desenhos CAD (Blocos Livres)', leafletLayer: cadLayerGroup, visivel: true, tipo: 'cad', cor: '#ffffff' });
+
         var colunasGlobais = {}; 
         
         function renderizarFiltroColunas() {
@@ -464,14 +485,8 @@
             });
         }
 
-        function atualizarColuna(k, estado) {
-            colunasGlobais[k] = estado;
-        }
-
-        function marcarTodasColunas(estado) {
-            for (var k in colunasGlobais) colunasGlobais[k] = estado;
-            renderizarFiltroColunas();
-        }
+        function atualizarColuna(k, estado) { colunasGlobais[k] = estado; }
+        function marcarTodasColunas(estado) { for (var k in colunasGlobais) colunasGlobais[k] = estado; renderizarFiltroColunas(); }
 
         var ultimaAreaCalculada = 0; var ultimoPerimetroCalculado = 0;
         var datumsDef = { "WGS84": "+datum=WGS84", "SIRGAS2000": "+ellps=GRS80 +towgs84=0,0,0,0,0,0,0", "SAD69": "+ellps=aust_SA +towgs84=-66.87,4.37,-38.52,0,0,0,0" };
@@ -572,9 +587,7 @@
 
             ultimaAreaCalculada = 0; ultimoPerimetroCalculado = 0;
             
-            if(pts.length >= 2) {
-                L.polyline(pts, {color:'#0098ff', weight:2, dashArray: '5,5'}).addTo(cPoly);
-            }
+            if(pts.length >= 2) { L.polyline(pts, {color:'#0098ff', weight:2, dashArray: '5,5'}).addTo(cPoly); }
 
             if(pts.length >= 3) {
                 L.polygon(pts, {color:'#0098ff', weight:0, fillOpacity:0.1}).addTo(cPoly); 
@@ -600,13 +613,12 @@
             try { let response = await fetch(urlDownload, { headers: { 'Accept': 'application/octet-stream' } }); if (!response.ok) throw new Error("Falha no download."); let blob = await response.blob(); let fVirtual = new File([blob], nomeArquivoVisivel, { type: "application/zip" }); loading.innerText = `⏳ Processando...`; setTimeout(() => { importarShapefile({ target: { files: [fVirtual] } }); }, 200); } catch (error) { alert("Erro: " + error.message); loading.style.display = 'none'; }
         }
 
-        // NOVO: CONSTRUÇÃO CORRETA E LIMPA DO POPUP COM FILTRO APLICADO
         function construirPopupCompleto(properties) {
             if (!properties) return "<p style='color:#888; font-size:10px;'>Sem dados.</p>"; 
             let html = "<div style='max-height: 250px; overflow-y: auto;'><table class='popup-table'><tbody>"; 
             let cont = 0;
             for (let key in properties) { 
-                if (colunasGlobais[key] !== true) continue; // Só renderiza se a caixa estiver marcada
+                if (colunasGlobais[key] !== true) continue; 
                 let val = properties[key]; 
                 if(val !== null && val !== "" && String(val).trim() !== "") { 
                     html += `<tr><th>${key}</th><td>${val}</td></tr>`; 
@@ -627,7 +639,6 @@
             const idNovaCamada = 'camada_' + camadaIdCounter++; const defaultColor = corOpcional || '#007acc';
             let geojson = reprojectGeoJSON(geojsonBruto);
             
-            // Popula o Filtro de Colunas na Aba Exportar
             if(geojson.features) {
                 geojson.features.forEach(f => {
                     if(f.properties) {
@@ -637,7 +648,7 @@
                     }
                 });
             }
-            renderizarFiltroColunas(); // Chama para atualizar visualmente no HTML
+            renderizarFiltroColunas(); 
 
             var novaCamada = L.geoJSON(geojson, { style: { color: defaultColor, weight: 1, fillOpacity: 0.1 }, onEachFeature: function(feature, layer) { layer.bindPopup(function() { return construirPopupCompleto(feature.properties); }); } }).addTo(map);
             if (focarMapa) { map.fitBounds(novaCamada.getBounds()); }
@@ -656,12 +667,13 @@
 
         function renderizarGestorCamadas() {
             var c = document.getElementById('camadas-dinamicas'); c.innerHTML = '';
-            if(gerenciadorCamadas.length === 0) { c.innerHTML = '<p style="font-size: 10px; color: var(--text-muted); text-align: center;">Nenhuma camada gerada.</p>'; document.getElementById('hud-layer').innerText = "Nenhuma"; return; }
             
-            document.getElementById('hud-layer').innerText = gerenciadorCamadas[0].nome;
+            document.getElementById('hud-layer').innerText = gerenciadorCamadas.length > 0 ? gerenciadorCamadas[0].nome : "Nenhuma";
 
             gerenciadorCamadas.forEach((cam, i) => {
-                var colorPicker = (cam.tipo === 'shp' || cam.tipo === 'rtk_poly' || cam.tipo === 'rtk_pt') ? `<input type="color" class="color-picker" value="${cam.cor}" onchange="alterarCorCamada('${cam.id}', this.value)">` : '';
+                var isShpOrRtk = (cam.tipo === 'shp' || cam.tipo === 'rtk_poly' || cam.tipo === 'rtk_pt');
+                var colorPicker = isShpOrRtk ? `<input type="color" class="color-picker" value="${cam.cor}" onchange="alterarCorCamada('${cam.id}', this.value)">` : '';
+                
                 c.innerHTML += `
                     <div class="layer-item">
                         <div class="layer-item-header">
@@ -688,11 +700,41 @@
         function extractRings(coords, type) { if(type === 'LineString') return [coords]; if(type === 'Polygon') return coords; if(type === 'MultiLineString') return coords; if(type === 'MultiPolygon') { let rings = []; coords.forEach(poly => poly.forEach(ring => rings.push(ring))); return rings; } return []; }
         function baixarArquivo(n, c, t) { var b = new Blob([c], {type: t}); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); }
 
+        // EXPORTADOR DXF DE BLOCOS COMPLEXOS RECURSIVO
+        function exportDxfEntity(layer, epsgU, epsgD) {
+            let dxfStr = "";
+            if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                var ptProj = proj4(epsgU, epsgD, [layer.getLatLng().lng, layer.getLatLng().lat]);
+                dxfStr += `0\nPOINT\n8\nCAD_DESENHO\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`;
+            } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
+                var latlngs = (layer instanceof L.Polygon) ? layer.getLatLngs()[0] : layer.getLatLngs();
+                dxfStr += "0\nPOLYLINE\n8\nCAD_DESENHO\n66\n1\n70\n1\n62\n2\n";
+                latlngs.forEach(ll => {
+                    var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]);
+                    dxfStr += `0\nVERTEX\n8\nCAD_DESENHO\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`;
+                });
+                dxfStr += "0\nSEQEND\n";
+            } else if (layer instanceof L.LayerGroup || layer instanceof L.FeatureGroup) {
+                layer.eachLayer(subLayer => { dxfStr += exportDxfEntity(subLayer, epsgU, epsgD); });
+            }
+            return dxfStr;
+        }
+
+        function extractGeoJsonEntities(layer, properties, featuresArr) {
+            if (layer instanceof L.LayerGroup || layer instanceof L.FeatureGroup) {
+                layer.eachLayer(sub => extractGeoJsonEntities(sub, properties, featuresArr));
+            } else {
+                try { var f = layer.toGeoJSON(); f.properties = properties || {}; featuresArr.push(f); } catch(e) {}
+            }
+        }
+
         function baixarCSV() {
-            var hasRtk = memoria.lon.length > 0; var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel);
-            if (!hasRtk && !hasLayers) { alert("Sem dados."); return; }
+            var isRtkPtVis = gerenciadorCamadas.find(c => c.id === 'rtk_pt')?.visivel !== false;
+            var hasRtk = memoria.lon.length > 0 && isRtkPtVis; 
+            var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel);
             
-            // FILTRA QUAIS COLUNAS DO SHAPEFILE VÃO ENTRAR NO CSV
+            if (!hasRtk && !hasLayers) { alert("Nenhum dado visível para exportar."); return; }
+            
             var extras = [];
             for (var k in colunasGlobais) { if (colunasGlobais[k]) extras.push(k); }
 
@@ -706,7 +748,7 @@
                 for(var i=0; i<memoria.lon.length; i++) { 
                     var c = proj4(epsgU, epsgD, [memoria.lon[i], memoria.lat[i]]); 
                     var row = ["Base_Vértices", memoria.nomes[i], c[0].toFixed(casasDec).replace('.',','), c[1].toFixed(casasDec).replace('.',','), memoria.cotas[i]];
-                    for(var e=0; e<extras.length; e++) row.push(""); // Deixa vazio nas colunas de atributos
+                    for(var e=0; e<extras.length; e++) row.push(""); 
                     csvContent += row.join(";") + "\n"; 
                 } 
             }
@@ -717,13 +759,10 @@
                         var centro = turf.centroid(feat).geometry.coordinates; 
                         var c = proj4(epsgU, epsgD, [centro[0], centro[1]]); 
                         var row = ["Shapefile", "Centroide", c[0].toFixed(casasDec).replace('.',','), c[1].toFixed(casasDec).replace('.',','), "0"];
-                        
-                        // PREENCHE APENAS OS ATRIBUTOS SELECIONADOS NO FILTRO
                         extras.forEach(k => {
                             var val = feat.properties ? feat.properties[k] : "";
                             row.push(val !== undefined && val !== null ? String(val).replace(/;/g, ',').replace(/\n/g, ' ') : "");
                         });
-                        
                         csvContent += row.join(";") + "\n"; 
                     } catch(e) {} 
                 }); 
@@ -732,61 +771,112 @@
         }
 
         function baixarDXF() {
-            var hasRtk = memoria.lon.length > 0; var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel); var hasCAD = false; cadLayerGroup.eachLayer(l => hasCAD = true);
-            if (!hasRtk && !hasLayers && !hasCAD) { alert("Sem dados."); return; }
+            var isRtkPtVis = gerenciadorCamadas.find(c => c.id === 'rtk_pt')?.visivel !== false;
+            var isRtkPolyVis = gerenciadorCamadas.find(c => c.id === 'rtk_poly')?.visivel !== false;
+            var isCadVis = gerenciadorCamadas.find(c => c.id === 'cad_layer')?.visivel !== false;
+
+            var hasRtkPt = memoria.lon.length > 0 && isRtkPtVis; 
+            var hasRtkPoly = memoria.lon.length > 0 && isRtkPolyVis; 
+            var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel); 
+            var hasCAD = false; 
+            cadLayerGroup.eachLayer(l => hasCAD = true);
+            hasCAD = hasCAD && isCadVis;
+
+            if (!hasRtkPt && !hasRtkPoly && !hasLayers && !hasCAD) { alert("Nenhum dado visível para exportar."); return; }
 
             var fmtOut = document.getElementById('out-formato').value; var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU;
             var dxf = "0\nSECTION\n2\nENTITIES\n";
             
-            if (hasRtk) {
-                var pts = obterCoordenadasExportacao(); dxf += "0\nPOLYLINE\n8\nLEVANTAMENTO_RTK\n66\n1\n70\n1\n62\n5\n"; 
-                for(var i=0; i<pts.length; i++) dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK\n10\n${pts[i].x.toFixed(4)}\n20\n${pts[i].y.toFixed(4)}\n30\n${pts[i].z}\n`; dxf += "0\nSEQEND\n";
-                for(var j=0; j<pts.length; j++) { dxf += `0\nPOINT\n8\nPONTOS_RTK\n10\n${pts[j].x.toFixed(4)}\n20\n${pts[j].y.toFixed(4)}\n30\n${pts[j].z}\n`; var rtkX = pts[j].x.toFixed(4); var rtkY = (pts[j].y + 1.5).toFixed(4); dxf += `0\nTEXT\n8\nTEXTOS_RTK\n10\n${rtkX}\n20\n${rtkY}\n30\n${pts[j].z}\n40\n1.5\n1\n${pts[j].nome}\n72\n1\n11\n${rtkX}\n21\n${rtkY}\n31\n${pts[j].z}\n73\n2\n`; }
+            var pts = obterCoordenadasExportacao();
+            
+            if (hasRtkPoly) {
+                dxf += "0\nPOLYLINE\n8\nLEVANTAMENTO_RTK_LINHAS\n66\n1\n70\n1\n62\n5\n"; 
+                for(var i=0; i<pts.length; i++) dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK_LINHAS\n10\n${pts[i].x.toFixed(4)}\n20\n${pts[i].y.toFixed(4)}\n30\n${pts[i].z}\n`; dxf += "0\nSEQEND\n";
             }
+            
+            if (hasRtkPt) {
+                for(var j=0; j<pts.length; j++) { 
+                    dxf += `0\nPOINT\n8\nPONTOS_RTK\n10\n${pts[j].x.toFixed(4)}\n20\n${pts[j].y.toFixed(4)}\n30\n${pts[j].z}\n`; 
+                    var rtkX = pts[j].x.toFixed(4); var rtkY = (pts[j].y + 1.5).toFixed(4); 
+                    dxf += `0\nTEXT\n8\nTEXTOS_RTK\n10\n${rtkX}\n20\n${rtkY}\n30\n${pts[j].z}\n40\n1.5\n1\n${pts[j].nome}\n72\n1\n11\n${rtkX}\n21\n${rtkY}\n31\n${pts[j].z}\n73\n2\n`; 
+                }
+            }
+
             if (hasCAD) { 
-                cadLayerGroup.eachLayer(layer => { 
-                    if (layer instanceof L.Marker || layer instanceof L.CircleMarker) { 
-                        var ptProj = proj4(epsgU, epsgD, [layer.getLatLng().lng, layer.getLatLng().lat]); 
-                        dxf += `0\nPOINT\n8\nCAD_DESENHO\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`; 
-                    } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) { 
-                        var latlngs = layer.getLatLngs()[0]; 
-                        dxf += "0\nPOLYLINE\n8\nCAD_DESENHO\n66\n1\n70\n1\n62\n2\n"; 
-                        latlngs.forEach(ll => { var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]); dxf += `0\nVERTEX\n8\nCAD_DESENHO\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`; }); 
+                cadLayerGroup.eachLayer(layer => { dxf += exportDxfEntity(layer, epsgU, epsgD); }); 
+            }
+
+            if (hasLayers) { 
+                var featuresClip = obterRecorteFeatures(); 
+                featuresClip.forEach(feat => { 
+                    var rings = extractRings(feat.geometry.coordinates, feat.geometry.type); 
+                    rings.forEach(ring => { 
+                        dxf += "0\nPOLYLINE\n8\nBASE_URBANISTICA_SHP\n66\n1\n70\n1\n62\n3\n"; 
+                        ring.forEach(coord => { var ptProj = proj4(epsgU, epsgD, [coord[0], coord[1]]); dxf += `0\nVERTEX\n8\nBASE_URBANISTICA_SHP\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`; }); 
                         dxf += "0\nSEQEND\n"; 
-                    } 
+                    }); 
+
+                    // ATRIBUTOS SHP CENTRALIZADOS NO DXF
+                    try {
+                        var centro = turf.centroid(feat).geometry.coordinates;
+                        var ptProj = proj4(epsgU, epsgD, [centro[0], centro[1]]);
+                        var textosAtivos = [];
+                        for (var k in colunasGlobais) {
+                            if (colunasGlobais[k] === true && feat.properties[k] !== undefined && feat.properties[k] !== null) {
+                                textosAtivos.push(`${k}: ${feat.properties[k]}`);
+                            }
+                        }
+                        if(textosAtivos.length > 0) {
+                            var espacamentoY = 2.0; 
+                            var startY = ptProj[1] + ((textosAtivos.length - 1) * espacamentoY / 2);
+                            textosAtivos.forEach((txt, idx) => {
+                                var y = startY - (idx * espacamentoY);
+                                dxf += `0\nTEXT\n8\nBASE_SHP_TEXTOS\n10\n${ptProj[0].toFixed(4)}\n20\n${y.toFixed(4)}\n30\n0\n40\n1.5\n1\n${txt}\n72\n1\n11\n${ptProj[0].toFixed(4)}\n21\n${y.toFixed(4)}\n31\n0\n73\n2\n`;
+                            });
+                        }
+                    } catch(e) {}
                 }); 
             }
-            if (hasLayers) { var featuresClip = obterRecorteFeatures(); featuresClip.forEach(feat => { var rings = extractRings(feat.geometry.coordinates, feat.geometry.type); rings.forEach(ring => { dxf += "0\nPOLYLINE\n8\nBASE_URBANISTICA_SHP\n66\n1\n70\n1\n62\n3\n"; ring.forEach(coord => { var ptProj = proj4(epsgU, epsgD, [coord[0], coord[1]]); dxf += `0\nVERTEX\n8\nBASE_URBANISTICA_SHP\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`; }); dxf += "0\nSEQEND\n"; }); }); }
             dxf += "0\nENDSEC\n0\nEOF"; baixarArquivo("LuiGIS_Projeto.dxf", dxf, "application/dxf");
         }
 
         function baixarGeoJSON() {
-            var hasRtk = memoria.lon.length > 0; var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel); var hasCAD = false; cadLayerGroup.eachLayer(l => hasCAD = true);
-            if (!hasRtk && !hasLayers && !hasCAD) { alert("Sem dados."); return; }
+            var isRtkPtVis = gerenciadorCamadas.find(c => c.id === 'rtk_pt')?.visivel !== false;
+            var isRtkPolyVis = gerenciadorCamadas.find(c => c.id === 'rtk_poly')?.visivel !== false;
+            var isCadVis = gerenciadorCamadas.find(c => c.id === 'cad_layer')?.visivel !== false;
+
+            var hasRtkPt = memoria.lon.length > 0 && isRtkPtVis; 
+            var hasRtkPoly = memoria.lon.length > 0 && isRtkPolyVis; 
+            var hasLayers = gerenciadorCamadas.some(c => c.tipo === 'shp' && c.visivel); 
+            var hasCAD = false; 
+            cadLayerGroup.eachLayer(l => hasCAD = true);
+            hasCAD = hasCAD && isCadVis;
+
+            if (!hasRtkPt && !hasRtkPoly && !hasLayers && !hasCAD) { alert("Nenhum dado visível para exportar."); return; }
+            
             var coords = [], features = [];
             
-            if (hasRtk) { 
+            if (hasRtkPt || hasRtkPoly) { 
                 for(var i=0; i<memoria.lon.length; i++) { 
                     var pt = [memoria.lon[i], memoria.lat[i], memoria.cotas[i]]; coords.push(pt); 
-                    features.push({ type: "Feature", geometry: { type: "Point", coordinates: pt }, properties: { Nome: memoria.nomes[i], Origem: "RTK" } }); 
+                    if(hasRtkPt) features.push({ type: "Feature", geometry: { type: "Point", coordinates: pt }, properties: { Nome: memoria.nomes[i], Origem: "RTK" } }); 
                 } 
-                if(coords.length > 2) { 
+                if(coords.length > 2 && hasRtkPoly) { 
                     coords.push(coords[0]); features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: { Origem: "RTK_Perimetro" } }); 
                 } 
             }
-            if (hasCAD) cadLayerGroup.eachLayer(layer => { try { var f = layer.toGeoJSON(); f.properties = f.properties || {}; f.properties.Origem = "CAD"; features.push(f); } catch(e) {} });
+            
+            if (hasCAD) {
+                cadLayerGroup.eachLayer(layer => { extractGeoJsonEntities(layer, {Origem: "CAD_Desenho"}, features); });
+            }
             
             if (hasLayers) { 
                 var featuresClip = obterRecorteFeatures(); 
                 featuresClip.forEach(f => { 
                     var newF = JSON.parse(JSON.stringify(f)); 
-                    
-                    // APLICA O FILTRO DE COLUNAS NA EXPORTAÇÃO DO GEOJSON
                     var propFiltrada = { Origem: "Shapefile" };
                     if(newF.properties) {
-                        for(var k in newF.properties) {
-                            if(colunasGlobais[k]) propFiltrada[k] = newF.properties[k];
-                        }
+                        for(var k in newF.properties) { if(colunasGlobais[k]) propFiltrada[k] = newF.properties[k]; }
                     }
                     newF.properties = propFiltrada;
                     features.push(newF); 
