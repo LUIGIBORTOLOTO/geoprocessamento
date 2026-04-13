@@ -700,7 +700,6 @@
         function extractRings(coords, type) { if(type === 'LineString') return [coords]; if(type === 'Polygon') return coords; if(type === 'MultiLineString') return coords; if(type === 'MultiPolygon') { let rings = []; coords.forEach(poly => poly.forEach(ring => rings.push(ring))); return rings; } return []; }
         function baixarArquivo(n, c, t) { var b = new Blob([c], {type: t}); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); }
 
-        // EXPORTADOR DXF DE BLOCOS COMPLEXOS RECURSIVO
         function exportDxfEntity(layer, epsgU, epsgD) {
             let dxfStr = "";
             if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
@@ -816,14 +815,14 @@
                         dxf += "0\nSEQEND\n"; 
                     }); 
 
-                    // ATRIBUTOS SHP CENTRALIZADOS NO DXF
                     try {
                         var centro = turf.centroid(feat).geometry.coordinates;
                         var ptProj = proj4(epsgU, epsgD, [centro[0], centro[1]]);
                         var textosAtivos = [];
                         for (var k in colunasGlobais) {
                             if (colunasGlobais[k] === true && feat.properties[k] !== undefined && feat.properties[k] !== null) {
-                                textosAtivos.push(`${k}: ${feat.properties[k]}`);
+                                // CORREÇÃO: Envia apenas o valor puro, sem a chave (sem "K: ")
+                                textosAtivos.push(`${feat.properties[k]}`); 
                             }
                         }
                         if(textosAtivos.length > 0) {
