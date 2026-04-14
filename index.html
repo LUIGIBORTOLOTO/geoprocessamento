@@ -56,7 +56,7 @@
         .card-title { position: absolute; top: -8px; left: 10px; background: var(--bg-card); padding: 0 5px; font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; }
         
         label { font-size: 10px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; display: block;}
-        select, input[type="text"], input[type="number"], textarea { width: 100%; padding: 8px; background-color: #121212; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 11px; font-family: inherit; box-sizing: border-box; outline: none; transition: 0.2s;}
+        select, input[type="text"], input[type="number"], input[type="date"], textarea { width: 100%; padding: 8px; background-color: #121212; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 11px; font-family: inherit; box-sizing: border-box; outline: none; transition: 0.2s;}
         select:focus, input:focus, textarea:focus { border-color: var(--accent); background: #1a1a1c;}
         optgroup { background: #111; color: var(--accent); font-weight: bold; }
         option { background: var(--bg-dark); color: #fff; }
@@ -108,16 +108,20 @@
         .tabela-editor th, .tabela-editor td { border: 1px solid #333; padding: 6px; }
         .tabela-editor th { background-color: #222; color: #aaa; position: sticky; top: 0; z-index: 2; font-family: 'Inter', sans-serif;}
         .tabela-editor td { background-color: #1a1a1c; text-align: right; }
-        .tabela-editor input { background: transparent; border: none; color: #4fc1ff; width: 100%; font-family: 'Fira Code', monospace; font-size: 11px; text-align: right;}
+        .tabela-editor input { background: transparent; border: none; color: #4fc1ff; width: 100%; font-family: 'Fira Code', monospace; font-size: 11px; text-align: right; outline: none;}
 
         .doc-preview-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #525659; padding: 20px; overflow-y: auto; display: none; z-index: 10000; box-sizing: border-box;}
-        .doc-page { background: white; color: black; width: 210mm; min-height: 297mm; margin: 0 auto 20px auto; padding: 20mm; box-shadow: 0 10px 30px rgba(0,0,0,0.8); font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; box-sizing: border-box; position: relative;}
-        .doc-page h2 { text-align: center; font-size: 14pt; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 20px;}
-        .doc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 9pt; }
+        
+        /* CSS IDÊNTICO AO DOCUMENTO WORD (Padrão ABNT) */
+        .doc-page { background: white; color: black; width: 210mm; min-height: 297mm; margin: 0 auto 20px auto; padding: 20mm; box-shadow: 0 10px 30px rgba(0,0,0,0.8); font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; box-sizing: border-box; position: relative;}
+        .doc-page h2 { text-align: left; font-size: 12pt; font-family: Arial, sans-serif; font-weight: bold; margin-bottom: 15px; border: none;}
+        .doc-page h3 { text-align: left; font-size: 11pt; font-family: Arial, sans-serif; font-weight: bold; margin-top: 20px; margin-bottom: 10px;}
+        .doc-identificacao { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; margin-bottom: 20px;}
+        .doc-identificacao span { font-weight: bold; display: inline-block; width: 140px;}
+        .doc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt; font-family: Arial, sans-serif;}
         .doc-table th, .doc-table td { border: 1px solid #000; padding: 6px; text-align: center; }
         .doc-table th { background-color: #eee; font-weight: bold; }
-        .selo-croqui { border: 2px solid #000; margin-top: 20px; padding: 10px; display: grid; grid-template-columns: 100px 1fr 1fr; gap: 10px; font-size: 9pt; align-items: center;}
-        .assinatura-box { margin-top: 50px; text-align: center; page-break-inside: avoid; }
+        .assinatura-box { margin-top: 50px; text-align: center; page-break-inside: avoid; font-family: Arial, sans-serif;}
 
         @media print {
             body * { visibility: hidden; }
@@ -150,32 +154,42 @@
 
         <div id="aba-db" class="tab-content active">
             <div class="card">
-                <div class="card-title">Banco de Profissionais</div>
+                <div class="card-title">Banco de Profissionais & RTK</div>
                 <select id="db-tecnico-select" onchange="carregarTecnico()" style="margin-bottom:8px;"><option value="novo">-- Cadastrar Novo Técnico --</option></select>
-                <div class="form-row"><div><label>Nome do Técnico</label><input type="text" id="tec-nome" value="Luigi Alves Bortoloto"></div></div>
+                <div class="form-row">
+                    <div style="flex:2;"><label>Responsável Técnico</label><input type="text" id="tec-nome" value="Luigi Alves Bortoloto"></div>
+                </div>
                 <div class="form-row">
                     <div><label>Formação</label><input type="text" id="tec-formacao" value="Técnico em Edificações"></div>
                     <div><label>CREA/CFT</label><input type="text" id="tec-crea" value="CFT: 000.000.000-00"></div>
                 </div>
                 <div class="form-row">
-                    <div><label>Código INCRA</label><input type="text" id="tec-incra" placeholder="Ex: XXXX"></div>
-                    <div><label>CPF/CNPJ</label><input type="text" id="tec-cpf" placeholder="000.000.000-00"></div>
+                    <div><label>ART / TRT nº</label><input type="text" id="tec-art" value="BR-0000000-0"></div>
+                    <div><label>Data Levantamento</label><input type="date" id="tec-data"></div>
+                </div>
+                <hr style="border-color: #333; margin: 4px 0;">
+                <div class="form-row">
+                    <div><label>Modelo GNSS</label><input type="text" id="eq-modelo" value="Topcon Hiper HR"></div>
+                    <div><label>Método</label><input type="text" id="eq-metodo" value="GPS RTK"></div>
                 </div>
                 <button class="btn btn-outline btn-block" style="margin-top:5px;" onclick="salvarTecnico()">💾 Salvar no Banco</button>
             </div>
 
             <div class="card">
-                <div class="card-title">Banco de Propriedades</div>
+                <div class="card-title">Dados do Imóvel & Proprietário</div>
                 <select id="db-prop-select" onchange="carregarPropriedade()" style="margin-bottom:8px;"><option value="novo">-- Cadastrar Nova Propriedade --</option></select>
                 <div class="form-row">
-                    <div><label>Proprietário</label><input type="text" id="prop-dono" value="Prefeitura Municipal"></div>
-                    <div><label>Denominação/Imóvel</label><input type="text" id="prop-nome" value="Lote Padrão"></div>
+                    <div style="flex:2;"><label>Proprietário</label><input type="text" id="prop-dono" value="Prefeitura Municipal"></div>
+                    <div><label>CPF/CNPJ</label><input type="text" id="prop-cpf" value="000.000.000-00"></div>
                 </div>
                 <div class="form-row">
-                    <div><label>Município - UF</label><input type="text" id="prop-mun" value="Igarapé - MG"></div>
-                    <div><label>Matrícula / CCIR</label><input type="text" id="prop-mat" placeholder="Matrícula 0000"></div>
+                    <div style="flex:2;"><label>Imóvel / Denominação</label><input type="text" id="prop-nome" value="Lote Padrão"></div>
+                    <div><label>Matrícula</label><input type="text" id="prop-mat" value="12.345"></div>
                 </div>
-                <div class="form-row"><div><label>Confrontantes (Geral)</label><input type="text" id="prop-conf" value="Lotes vizinhos e via pública"></div></div>
+                <div class="form-row">
+                    <div><label>Município/UF</label><input type="text" id="prop-mun" value="Igarapé / MG"></div>
+                    <div><label>Comarca</label><input type="text" id="prop-comarca" value="CRI de Igarapé"></div>
+                </div>
                 <button class="btn btn-outline btn-block" style="margin-top:5px;" onclick="salvarPropriedade()">💾 Salvar no Banco</button>
             </div>
         </div>
@@ -213,9 +227,10 @@
 
         <div id="aba-editor" class="tab-content" style="padding:10px;">
             <button class="btn btn-success btn-block" style="margin-bottom:10px;" onclick="salvarEdicoes()">✅ Aplicar Edições no Mapa</button>
+            <p style="font-size: 9px; color: #aaa; margin: 0 0 5px 0;">O preenchimento do Confrontante é utilizado para gerar as tabelas do documento.</p>
             <div class="spreadsheet-container">
                 <table class="tabela-editor">
-                    <thead><tr><th>#</th><th>Vértice</th><th>Coord X/E</th><th>Coord Y/N</th><th>Cota(Z)</th></tr></thead>
+                    <thead><tr><th>Vértice</th><th>Coord E(X)</th><th>Coord N(Y)</th><th>Cota(Z)</th><th style="width: 120px;">Confrontante</th></tr></thead>
                     <tbody id="tabela-editor-body"><tr><td colspan="5" style="text-align:center; padding:20px; color:#666;">Aguardando plotagem...</td></tr></tbody>
                 </table>
             </div>
@@ -275,8 +290,6 @@
                 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <button class="btn btn-primary" onclick="gerarDocumentacaoCompleta('memorial')">📄 1. Memorial Descritivo</button>
-                    <button class="btn btn-outline" style="color:#fff;" onclick="gerarDocumentacaoCompleta('anuencia')">🤝 2. Cartas de Anuência</button>
-                    <button class="btn btn-outline" style="color:#fff;" onclick="gerarDocumentacaoCompleta('requerimento')">📝 3. Requerimento Oficial</button>
                     <button class="btn btn-warning" onclick="gerarDocumentacaoCompleta('laudo')">⚖️ 4. Laudo Técnico</button>
                     <button class="btn btn-success" onclick="gerarDocumentacaoCompleta('croqui')">🗺️ 5. Croqui c/ Tabela A4</button>
                 </div>
@@ -391,6 +404,8 @@
     </div>
 
     <script>
+        document.getElementById('tec-data').valueAsDate = new Date();
+
         var cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 22, attribution: '© CartoDB' });
         var googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&hl=pt-BR&x={x}&y={y}&z={z}', { maxZoom: 24, maxNativeZoom: 20 });
         var map = L.map('map', { preserveDrawingBuffer: true, zoomControl: false, layers: [cartoDark] }).setView([-20.076, -44.225], 14);
@@ -403,11 +418,7 @@
         var gerenciadorCamadas = [];
         var camadaIdCounter = 0;
         
-        // --- NOVO SISTEMA CAD (LAYERS DINÂMICAS) ---
-        function inicializarSistemaCAD() {
-            // Cria a layer 0 inicial
-            criarLayerCAD("Layer_0", "#0098ff");
-        }
+        function inicializarSistemaCAD() { criarLayerCAD("Layer_0", "#0098ff"); }
 
         function criarLayerCAD(nomeOpcional, corOpcional) {
             var inputName = document.getElementById('new-cad-layer-name').value.trim();
@@ -422,7 +433,7 @@
             document.getElementById('new-cad-layer-name').value = '';
             atualizarDropdownCAD(idNova);
             renderizarGestorCamadas();
-            atualizarLayerAtivaCAD(); // Aplica a cor ao path preview do Geoman
+            atualizarLayerAtivaCAD(); 
         }
 
         function getRandomColor() {
@@ -449,7 +460,6 @@
             
             if(layerData) {
                 document.getElementById('hud-layer').innerText = layerData.nome;
-                // Altera a cor da caneta (preview) do Leaflet-Geoman para bater com a layer ativa
                 map.pm.setPathOptions({ color: layerData.cor, fillColor: layerData.cor, fillOpacity: 0.2 });
             }
         }
@@ -523,13 +533,11 @@
             return null;
         }
 
-        // EVENTO GLOBAL DE DESENHO GEOMAN (Direciona para a Layer CAD Ativa)
         map.on('pm:create', function(e) {
             var layer = e.layer;
             var activeLayerData = getActiveCadLayerData();
             if(!activeLayerData) { alert("Crie uma Layer CAD primeiro."); map.removeLayer(layer); return; }
 
-            // Se for um bloco especial do dropdown
             if(e.shape === 'Marker') {
                 var type = document.getElementById('cad-block-type').value;
                 if(type !== 'default') {
@@ -539,13 +547,10 @@
                         layer = vetorPronto;
                     }
                 } else {
-                    // Ponto livre assume a cor da Layer (ByLayer)
                     layer.setIcon(L.circleMarker(layer.getLatLng(), {radius:4, color: activeLayerData.cor, fillColor: '#111', fillOpacity: 1}));
                 }
             } 
-            // Se for polígono/linha desenhado livremente, o Geoman já aplica o setPathOptions ativo (cor da layer)
             
-            // Adiciona fisicamente a geometria dentro do L.FeatureGroup da Layer CAD Ativa
             layer.addTo(activeLayerData.leafletLayer);
         });
 
@@ -557,7 +562,7 @@
             }
         }
 
-        var memoria = { nomes: [], cotas: [], lon: [], lat: [] };
+        var memoria = { nomes: [], cotas: [], lon: [], lat: [], confs: [] };
         
         var colunasGlobais = {}; 
         
@@ -596,10 +601,10 @@
             var sT = document.getElementById('db-tecnico-select'); sT.innerHTML = '<option value="novo">-- Cadastrar Novo Técnico --</option>'; dbTecnicos.forEach(t => sT.innerHTML += `<option value="${t.id}">${t.nome}</option>`); if(dbTecnicos.length > 0) { sT.value = dbTecnicos[0].id; carregarTecnico(); }
             var sP = document.getElementById('db-prop-select'); sP.innerHTML = '<option value="novo">-- Cadastrar Nova Propriedade --</option>'; dbProps.forEach(p => sP.innerHTML += `<option value="${p.id}">${p.nome} (${p.dono})</option>`); if(dbProps.length > 0) { sP.value = dbProps[0].id; carregarPropriedade(); }
         }
-        function carregarTecnico() { var id = document.getElementById('db-tecnico-select').value; if (id === 'novo') { document.getElementById('tec-nome').value = ''; document.getElementById('tec-formacao').value = ''; return; } var t = dbTecnicos.find(x => x.id === id); if(t) { document.getElementById('tec-nome').value = t.nome; document.getElementById('tec-formacao').value = t.formacao; document.getElementById('tec-crea').value = t.crea; document.getElementById('tec-incra').value = t.incra; document.getElementById('tec-cpf').value = t.cpf; } }
-        function salvarTecnico() { var t = { id: 't_' + Date.now(), nome: document.getElementById('tec-nome').value, formacao: document.getElementById('tec-formacao').value, crea: document.getElementById('tec-crea').value, incra: document.getElementById('tec-incra').value, cpf: document.getElementById('tec-cpf').value }; dbTecnicos.push(t); localStorage.setItem('docgeo_tecnicos', JSON.stringify(dbTecnicos)); atualizarSelectsDB(); alert("Técnico salvo!"); }
-        function carregarPropriedade() { var id = document.getElementById('db-prop-select').value; if (id === 'novo') return; var p = dbProps.find(x => x.id === id); if(p) { document.getElementById('prop-dono').value = p.dono; document.getElementById('prop-nome').value = p.nome; document.getElementById('prop-mun').value = p.mun; document.getElementById('prop-mat').value = p.mat; document.getElementById('prop-conf').value = p.conf; } }
-        function salvarPropriedade() { var p = { id: 'p_' + Date.now(), dono: document.getElementById('prop-dono').value, nome: document.getElementById('prop-nome').value, mun: document.getElementById('prop-mun').value, mat: document.getElementById('prop-mat').value, conf: document.getElementById('prop-conf').value }; dbProps.push(p); localStorage.setItem('docgeo_props', JSON.stringify(dbProps)); atualizarSelectsDB(); alert("Propriedade salva!"); }
+        function carregarTecnico() { var id = document.getElementById('db-tecnico-select').value; if (id === 'novo') { document.getElementById('tec-nome').value = ''; document.getElementById('tec-formacao').value = ''; return; } var t = dbTecnicos.find(x => x.id === id); if(t) { document.getElementById('tec-nome').value = t.nome; document.getElementById('tec-formacao').value = t.formacao; document.getElementById('tec-crea').value = t.crea; } }
+        function salvarTecnico() { var t = { id: 't_' + Date.now(), nome: document.getElementById('tec-nome').value, formacao: document.getElementById('tec-formacao').value, crea: document.getElementById('tec-crea').value }; dbTecnicos.push(t); localStorage.setItem('docgeo_tecnicos', JSON.stringify(dbTecnicos)); atualizarSelectsDB(); alert("Técnico salvo!"); }
+        function carregarPropriedade() { var id = document.getElementById('db-prop-select').value; if (id === 'novo') return; var p = dbProps.find(x => x.id === id); if(p) { document.getElementById('prop-dono').value = p.dono; document.getElementById('prop-nome').value = p.nome; document.getElementById('prop-mun').value = p.mun; document.getElementById('prop-mat').value = p.mat; } }
+        function salvarPropriedade() { var p = { id: 'p_' + Date.now(), dono: document.getElementById('prop-dono').value, nome: document.getElementById('prop-nome').value, mun: document.getElementById('prop-mun').value, mat: document.getElementById('prop-mat').value }; dbProps.push(p); localStorage.setItem('docgeo_props', JSON.stringify(dbProps)); atualizarSelectsDB(); alert("Propriedade salva!"); }
         atualizarSelectsDB();
 
         document.getElementById('main-formato').addEventListener('change', function(e) { document.getElementById('utm-options').style.display = (e.target.value === 'utm') ? 'flex' : 'none'; });
@@ -625,7 +630,7 @@
         function processarLevantamento() {
             var txt = document.getElementById('main-texto').value; if(!txt.trim()) { alert("Insira dados."); return; }
             var fmtIn = document.getElementById('main-formato').value; var epsgIn = obterEpsgEntrada(); var epsgOut = "+proj=longlat +datum=WGS84 +no_defs";
-            memoria = { nomes: [], cotas: [], lon: [], lat: [] }; var linhas = txt.split('\n');
+            memoria = { nomes: [], cotas: [], lon: [], lat: [], confs: [] }; var linhas = txt.split('\n');
 
             for (var i = 0; i < linhas.length; i++) {
                 var linhaLimpa = linhas[i].trim().replace(/"/g, ''); if (linhaLimpa === "" || linhaLimpa.startsWith("CO;")) continue; 
@@ -652,7 +657,7 @@
                     }
                 }
                 if(x === null || y === null || isNaN(x) || isNaN(y)) continue;
-                try { var conv = (fmtIn === 'sgl' || fmtIn === 'decimal') ? [x, y] : proj4(epsgIn, epsgOut, [x, y]); memoria.nomes.push(nomeMarco); memoria.cotas.push(z); memoria.lon.push(conv[0]); memoria.lat.push(conv[1]); } catch(e) {}
+                try { var conv = (fmtIn === 'sgl' || fmtIn === 'decimal') ? [x, y] : proj4(epsgIn, epsgOut, [x, y]); memoria.nomes.push(nomeMarco); memoria.cotas.push(z); memoria.lon.push(conv[0]); memoria.lat.push(conv[1]); memoria.confs.push(""); } catch(e) {}
             }
             if(memoria.lon.length === 0) { alert("Nenhum dado válido."); return; }
             atualizarEditor(); atualizarMapa(true);
@@ -660,9 +665,9 @@
 
         function atualizarEditor() {
             var b = document.getElementById('tabela-editor-body'); b.innerHTML = ""; var epsgC = obterEpsgEntrada();
-            memoria.nomes.forEach((n, i) => { var c = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgC, [memoria.lon[i], memoria.lat[i]]); b.innerHTML += `<tr><td>${i+1}</td><td><input type="text" id="ed-n-${i}" value="${n}"></td><td>${c[0].toFixed(3)}</td><td>${c[1].toFixed(3)}</td><td><input type="number" step="0.001" id="ed-z-${i}" value="${memoria.cotas[i]}"></td></tr>`; });
+            memoria.nomes.forEach((n, i) => { var c = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgC, [memoria.lon[i], memoria.lat[i]]); b.innerHTML += `<tr><td><input type="text" id="ed-n-${i}" value="${n}" style="text-align:left; color:#fff; font-family:'Inter', sans-serif;"></td><td>${c[0].toFixed(3)}</td><td>${c[1].toFixed(3)}</td><td><input type="number" step="0.001" id="ed-z-${i}" value="${memoria.cotas[i]}"></td><td><input type="text" id="ed-c-${i}" value="${memoria.confs[i]}" style="text-align:left; color:#fff; font-family:'Inter', sans-serif;" placeholder="Ex: Rua A"></td></tr>`; });
         }
-        function salvarEdicoes() { if(memoria.lon.length === 0) return; memoria.nomes.forEach((n, i) => { memoria.nomes[i] = document.getElementById(`ed-n-${i}`).value; memoria.cotas[i] = parseFloat(document.getElementById(`ed-z-${i}`).value) || 0; }); atualizarMapa(false); }
+        function salvarEdicoes() { if(memoria.lon.length === 0) return; memoria.nomes.forEach((n, i) => { memoria.nomes[i] = document.getElementById(`ed-n-${i}`).value; memoria.cotas[i] = parseFloat(document.getElementById(`ed-z-${i}`).value) || 0; memoria.confs[i] = document.getElementById(`ed-c-${i}`).value || ""; }); atualizarMapa(false); }
 
         function atualizarMapa(zoom = false) {
             var idsRtk = ['rtk_poly', 'rtk_pt', 'rtk_text'];
@@ -841,7 +846,6 @@
         function extractRings(coords, type) { if(type === 'LineString') return [coords]; if(type === 'Polygon') return coords; if(type === 'MultiLineString') return coords; if(type === 'MultiPolygon') { let rings = []; coords.forEach(poly => poly.forEach(ring => rings.push(ring))); return rings; } return []; }
         function baixarArquivo(n, c, t) { var b = new Blob([c], {type: t}); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); }
 
-        // --- SISTEMA DE EXPORTAÇÃO DXF COM TRUE COLOR 420 ---
         function hexToDxf420(hex) {
             if (!hex) return 0;
             return parseInt(hex.replace('#', ''), 16);
@@ -1058,48 +1062,74 @@
             baixarArquivo("LuiGIS_Web.geojson", JSON.stringify({ type: "FeatureCollection", features: features }, null, 2), "application/json");
         }
 
-        function calcAzimuteDist(x1, y1, x2, y2) { var dx = x2 - x1; var dy = y2 - y1; var dist = Math.sqrt(dx*dx + dy*dy); var az = Math.atan2(dx, dy) * (180 / Math.PI); if (az < 0) az += 360; var d = Math.floor(az); var m = Math.floor((az - d) * 60); var s = (((az - d) * 60) - m) * 60; return { dist: dist.toFixed(2), azimute: `${d}° ${m.toString().padStart(2, '0')}' ${s.toFixed(2).padStart(5, '0')}"` }; }
-        function getDataFormatada() { var m = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]; var d = new Date(); return `${d.getDate()} de ${m[d.getMonth()]} de ${d.getFullYear()}`; }
+        function calcAzimuteDist(x1, y1, x2, y2) { var dx = x2 - x1; var dy = y2 - y1; var dist = Math.sqrt(dx*dx + dy*dy); var az = Math.atan2(dx, dy) * (180 / Math.PI); if (az < 0) az += 360; var d = Math.floor(az); var m = Math.floor((az - d) * 60); var s = (((az - d) * 60) - m) * 60; return { dist: dist.toFixed(2), azimute: `${d}°${m.toString().padStart(2, '0')}'${Math.floor(s).toString().padStart(2, '0')}"` }; }
+        function getDataFormatada(dData) { var m = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"]; var d = dData ? new Date(dData) : new Date(); if(dData) d.setMinutes(d.getMinutes() + d.getTimezoneOffset()); return `${String(d.getDate()).padStart(2,'0')} de ${m[d.getMonth()]} de ${d.getFullYear()}`; }
 
         async function gerarDocumentacaoCompleta(tipo) {
             if (memoria.lon.length < 3) { alert("Polígono não fechado."); return; }
 
             var prop = document.getElementById('prop-dono').value; var mun = document.getElementById('prop-mun').value;
             var gleba = document.getElementById('prop-nome').value; var mat = document.getElementById('prop-mat').value;
-            var confront = document.getElementById('prop-conf').value;
+            var cpf = document.getElementById('prop-cpf').value; var comarca = document.getElementById('prop-comarca').value;
+
             var tecNome = document.getElementById('tec-nome').value; var tecForm = document.getElementById('tec-formacao').value;
-            var tecCrea = document.getElementById('tec-crea').value; var tecIncra = document.getElementById('tec-incra').value;
+            var tecCrea = document.getElementById('tec-crea').value; var tecArt = document.getElementById('tec-art').value;
+            var tecData = getDataFormatada(document.getElementById('tec-data').value);
+            var eqMetodo = document.getElementById('eq-metodo').value;
 
             var areaHa = (ultimaAreaCalculada / 10000).toFixed(4).replace('.', ',');
             var area = ultimaAreaCalculada.toFixed(2).replace('.', ','); var perim = ultimoPerimetroCalculado.toFixed(2).replace('.', ',');
             var dataFormatada = getDataFormatada();
 
-            var epsgUTM = "+proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
+            var epsgUTM = obterEpsgEntrada();
             var coords = []; for(var i=0; i<memoria.lon.length; i++) { var c = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgUTM, [memoria.lon[i], memoria.lat[i]]); coords.push({x: c[0], y: c[1], z: memoria.cotas[i]}); }
 
             var html = "";
 
             if (tipo === 'memorial') {
-                html += `<div class="doc-page"><h2>MEMORIAL DESCRITIVO TÉCNICO</h2><table class="doc-table" style="margin-bottom:20px;"><tr><td style="text-align:left;"><strong>Proprietário:</strong> ${prop}</td><td style="text-align:left;"><strong>Área:</strong> ${areaHa} ha</td></tr><tr><td style="text-align:left;"><strong>Imóvel:</strong> ${gleba}</td><td style="text-align:left;"><strong>Perímetro:</strong> ${perim} m</td></tr><tr><td style="text-align:left;"><strong>Município/UF:</strong> ${mun}</td><td style="text-align:left;"><strong>Matrícula:</strong> ${mat}</td></tr></table><p style="text-align: justify; text-indent: 30px;">Inicia-se a descrição do perímetro no vértice <strong>${memoria.nomes[0]}</strong>, de coordenadas UTM N <strong>${coords[0].y.toFixed(3).replace('.',',')} m</strong> e E <strong>${coords[0].x.toFixed(3).replace('.',',')} m</strong>, fuso 23S, Datum SIRGAS2000; deste, segue com os seguintes azimutes e distâncias, confrontando com ${confront}:</p>`;
-                var tabelaAnalitica = `<table class="doc-table"><thead><tr><th>Vértice</th><th>Azimute</th><th>Distância (m)</th><th>Coord E (X)</th><th>Coord N (Y)</th></tr></thead><tbody>`;
+                html += `<div class="doc-page">
+                    <h2>1. MEMORIAL DESCRITIVO</h2>
+                    
+                    <h3>1.1 IDENTIFICAÇÃO DO IMÓVEL</h3>
+                    <div class="doc-identificacao">
+                        <span>Proprietário:</span> ${prop}<br>
+                        <span>CPF/CNPJ:</span> ${cpf}<br>
+                        <span>Imóvel:</span> ${gleba} – Matrícula nº ${mat} – ${comarca}<br>
+                        <span>Município/UF:</span> ${mun}<br>
+                        <span>Comarca:</span> ${comarca}<br>
+                        <span>Área Calculada:</span> ${area} m² (${areaHa} ha)<br>
+                        <span>Perímetro:</span> ${perim} m
+                    </div>
+
+                    <h3>1.2 DESCRIÇÃO PERIMÉTRICA</h3>
+                    <p style="text-align: justify; text-indent: 30px;">Inicia-se a descrição no vértice <strong>${memoria.nomes[0]}</strong>, de coordenadas N ${coords[0].y.toFixed(3).replace('.',',')} m e E ${coords[0].x.toFixed(3).replace('.',',')} m, situado na divisa com ${memoria.confs[0] || '---'};</p>`;
+                
                 for (var i = 0; i < coords.length; i++) {
                     var pAtual = i; var pProx = (i + 1) % coords.length; var calc = calcAzimuteDist(coords[pAtual].x, coords[pAtual].y, coords[pProx].x, coords[pProx].y);
-                    html += `<p style="text-align: justify; margin: 5px 0;">Do vértice <strong>${memoria.nomes[pAtual]}</strong> ao vértice <strong>${memoria.nomes[pProx]}</strong>, com azimute de <strong>${calc.azimute}</strong> e distância de <strong>${calc.dist.replace('.',',')} m</strong>.</p>`;
-                    tabelaAnalitica += `<tr><td><strong>${memoria.nomes[pAtual]}</strong></td><td>${calc.azimute}</td><td>${calc.dist.replace('.',',')}</td><td>${coords[pAtual].x.toFixed(3).replace('.',',')}</td><td>${coords[pAtual].y.toFixed(3).replace('.',',')}</td></tr>`;
+                    var confStr = memoria.confs[pAtual] || "---";
+                    html += `<p style="text-align: justify; margin: 5px 0;">Do vértice <strong>${memoria.nomes[pAtual]}</strong>, segue confrontando com <strong>${confStr}</strong>, com azimute de ${calc.azimute} e distância de ${calc.dist.replace('.',',')} m, até o vértice <strong>${memoria.nomes[pProx]}</strong>;</p>`;
                 }
-                html += `<p style="text-align: justify; text-indent: 30px; margin-top: 15px;">Chegando novamente ao vértice inicial, fechando o polígono.</p><br><h3>Tabela Analítica</h3>` + tabelaAnalitica + `</tbody></table><div class="assinatura-box"><p>_____________________________________</p><p><strong>${tecNome}</strong><br>${tecForm}<br>Registro: ${tecCrea}</p><p>${mun}, ${dataFormatada}.</p></div></div>`;
+                
+                html += `
+                    <h3>1.3 COORDENADAS DOS VÉRTICES</h3>
+                    <table class="doc-table"><thead><tr><th>VÉRTICE</th><th>COORD. N (m)</th><th>COORD. E (m)</th><th>ALTITUDE (m)</th><th>MÉTODO</th></tr></thead><tbody>`;
+                for (var i = 0; i < coords.length; i++) { html += `<tr><td>${memoria.nomes[i]}</td><td>${coords[i].y.toFixed(3).replace('.',',')}</td><td>${coords[i].x.toFixed(3).replace('.',',')}</td><td>${coords[i].z.toFixed(2).replace('.',',')}</td><td>${eqMetodo}</td></tr>`; }
+                html += `</tbody></table>
+
+                    <h3>1.4 CONFRONTAÇÕES E DIVISAS</h3>
+                    <table class="doc-table"><thead><tr><th>DE</th><th>ATÉ</th><th>AZIMUTE</th><th>DISTÂNCIA (m)</th><th>CONFRONTANTE</th></tr></thead><tbody>`;
+                for (var i = 0; i < coords.length; i++) { var pProx = (i + 1) % coords.length; var calc = calcAzimuteDist(coords[i].x, coords[i].y, coords[pProx].x, coords[pProx].y); html += `<tr><td>${memoria.nomes[i]}</td><td>${memoria.nomes[pProx]}</td><td>${calc.azimute}</td><td>${calc.dist.replace('.',',')}</td><td>${memoria.confs[i] || '---'}</td></tr>`; }
+                html += `</tbody></table>
+
+                    <h3>1.5 RESPONSÁVEL TÉCNICO</h3>
+                    <div class="doc-identificacao"><span>Responsável:</span> ${tecNome}<br><span>Registro:</span> ${tecCrea}<br><span>Data Levant.:</span> ${tecData}<br><span>ART/TRT nº:</span> ${tecArt}</div>
+                    
+                    <div class="assinatura-box"><p>_____________________________________</p><p><strong>${tecNome}</strong><br>${tecForm}<br>${tecCrea}</p><p>${mun.split('/')[0]}, ${dataFormatada}.</p></div>
+                </div>`;
             }
 
             if (tipo === 'laudo') {
-                html += `<div class="doc-page"><h2>LAUDO TÉCNICO DE CONSTATAÇÃO</h2><p style="text-align: justify; text-indent: 30px;">Eu, <strong>${tecNome}</strong>, profissional habilitado (${tecCrea}), declaro para os devidos fins legais que procedi o levantamento topográfico e a demarcação dos limites do imóvel <strong>${gleba}</strong>, de <strong>${prop}</strong>, em <strong>${mun}</strong>.</p><p style="text-align: justify; text-indent: 30px;">ATESTO que os limites refletem a realidade física do local, perfazendo área de <strong>${areaHa} hectares</strong> e perímetro de <strong>${perim} metros</strong>.</p><div class="assinatura-box" style="margin-top:100px;"><p>_____________________________________</p><p><strong>${tecNome}</strong></p><p>${mun}, ${dataFormatada}.</p></div></div>`;
-            }
-
-            if (tipo === 'anuencia') {
-                html += `<div class="doc-page"><h2>CARTA DE ANUÊNCIA</h2><p style="text-align: justify; text-indent: 30px;">Nós, abaixo assinados, proprietários dos imóveis confrontantes com a área pertencente a <strong>${prop}</strong> (<strong>${gleba}</strong> - <strong>${area} m²</strong>), DECLARAMOS concordância plena com as divisas apuradas no levantamento técnico.</p><table class="doc-table" style="margin-top: 40px; line-height: 2;"><thead><tr><th width="40%">Confrontante</th><th width="20%">CPF/RG</th><th width="40%">Assinatura</th></tr></thead><tbody><tr><td style="height:50px;"></td><td></td><td></td></tr><tr><td style="height:50px;"></td><td></td><td></td></tr><tr><td style="height:50px;"></td><td></td><td></td></tr></tbody></table><div class="assinatura-box" style="margin-top:80px;"><p>${mun}, ${dataFormatada}.</p></div></div>`;
-            }
-
-            if (tipo === 'requerimento') {
-                html += `<div class="doc-page"><h2>REQUERIMENTO OFICIAL</h2><p style="text-align: justify;"><strong>Ao Órgão Competente de ${mun}</strong>,</p><br><p style="text-align: justify; text-indent: 30px;"><strong>${prop}</strong>, legítimo proprietário do imóvel <strong>${gleba}</strong>, vem REQUERER a análise e aprovação do levantamento topográfico anexo, resultando em <strong>${area} m²</strong>.</p><p style="text-align: justify; text-indent: 30px;">Nestes termos, pede deferimento.</p><div class="assinatura-box" style="margin-top:80px;"><p>_____________________________________</p><p><strong>${prop}</strong><br>Requerente</p><p>${mun}, ${dataFormatada}.</p></div></div>`;
+                html += `<div class="doc-page"><h2>LAUDO TÉCNICO DE CONSTATAÇÃO</h2><p style="text-align: justify; text-indent: 30px;">Eu, <strong>${tecNome}</strong>, profissional habilitado (${tecCrea}), declaro para os devidos fins legais que procedi o levantamento topográfico e a demarcação dos limites do imóvel <strong>${gleba}</strong>, de <strong>${prop}</strong>, em <strong>${mun}</strong>.</p><p style="text-align: justify; text-indent: 30px;">ATESTO que os limites refletem a realidade física do local, perfazendo área de <strong>${areaHa} hectares</strong> e perímetro de <strong>${perim} metros</strong>.</p><div class="assinatura-box" style="margin-top:100px;"><p>_____________________________________</p><p><strong>${tecNome}</strong><br>ART/TRT: ${tecArt}</p><p>${mun.split('/')[0]}, ${dataFormatada}.</p></div></div>`;
             }
 
             if (tipo === 'croqui') {
@@ -1111,12 +1141,12 @@
                     document.querySelector('.leaflet-control-container').style.display = 'block';
                     var imgData = canvas.toDataURL("image/png");
                     
-                    var tabHTML = `<table class="doc-table" style="font-size:7pt;"><thead><tr><th>Vértice</th><th>Coord E</th><th>Coord N</th><th>Dist.</th></tr></thead><tbody>`;
+                    var tabHTML = `<table class="doc-table" style="font-size:7pt;"><thead><tr><th>Vértice</th><th>Coord N</th><th>Coord E</th><th>Azim.</th><th>Dist.</th><th>Confrontante</th></tr></thead><tbody>`;
                     var limit = Math.min(coords.length, 40);
-                    for(var i=0; i<limit; i++) { var c = calcAzimuteDist(coords[i].x, coords[i].y, coords[(i+1)%coords.length].x, coords[(i+1)%coords.length].y); tabHTML += `<tr><td>${memoria.nomes[i]}</td><td>${coords[i].x.toFixed(2)}</td><td>${coords[i].y.toFixed(2)}</td><td>${c.dist}m</td></tr>`; }
+                    for(var i=0; i<limit; i++) { var c = calcAzimuteDist(coords[i].x, coords[i].y, coords[(i+1)%coords.length].x, coords[(i+1)%coords.length].y); tabHTML += `<tr><td>${memoria.nomes[i]}</td><td>${coords[i].y.toFixed(2)}</td><td>${coords[i].x.toFixed(2)}</td><td>${c.azimute}</td><td>${c.dist}m</td><td>${memoria.confs[i] || '-'}</td></tr>`; }
                     tabHTML += `</tbody></table>`;
 
-                    var finalHTML = `<div class="doc-page" style="display:flex; flex-direction:column; padding:10mm;"><h2 style="font-size:12pt;">PLANTA TÉCNICA DO IMÓVEL</h2><div style="flex-grow:1; position:relative; border:2px solid #000; padding:2px;"><img src="${imgData}" style="width:100%; height:100%; object-fit:cover;"><div style="position:absolute; top:10px; right:10px; width:40px; height:40px; background:white; border:1px solid #000; text-align:center; line-height:40px; font-weight:bold; border-radius:50%;">N▲</div></div><div style="display:flex; gap:10px; margin-top:10px; height:200px;"><div style="flex:1; overflow:hidden;">${tabHTML}</div><div style="flex:2;" class="selo-croqui"><div style="grid-column: span 3; text-align:center; font-weight:bold; font-size:11pt; border-bottom:1px solid #000; padding-bottom:5px;">INFORMAÇÕES DO LEVANTAMENTO</div><div><strong>Imóvel:</strong></div><div style="grid-column: span 2">${gleba}</div><div><strong>Proprietário:</strong></div><div style="grid-column: span 2">${prop}</div><div><strong>Município:</strong></div><div style="grid-column: span 2">${mun}</div><div><strong>Área Total:</strong></div><div style="grid-column: span 2">${areaHa} ha</div><div><strong>Resp. Técnico:</strong></div><div style="grid-column: span 2">${tecNome} - ${tecCrea}</div><div style="grid-column: span 3; text-align:center; margin-top:10px;">____________________________________<br>Assinatura Responsável</div></div></div></div>`;
+                    var finalHTML = `<div class="doc-page" style="display:flex; flex-direction:column; padding:10mm; min-height: 297mm; page-break-after: always;"><h2 style="font-size:12pt; text-align:center;">PLANTA ESQUEMÁTICA DO IMÓVEL</h2><table class="doc-table" style="font-size:9pt; margin-bottom:10px; text-align:left;"><tr><td style="text-align:left;"><strong>Proprietário:</strong> ${prop}</td><td style="text-align:left;"><strong>Matrícula:</strong> ${mat}</td></tr><tr><td style="text-align:left;"><strong>Município:</strong> ${mun}</td><td style="text-align:left;"><strong>Área:</strong> ${area} m²</td></tr><tr><td style="text-align:left;"><strong>Perímetro:</strong> ${perim} m</td><td style="text-align:left;"><strong>Escala:</strong> S/ Escala</td></tr></table><div style="flex-grow:1; position:relative; border:2px solid #000; padding:2px; min-height:300px;"><img src="${imgData}" style="width:100%; height:100%; object-fit:cover;"><div style="position:absolute; top:10px; right:10px; width:40px; height:40px; background:white; border:1px solid #000; text-align:center; line-height:40px; font-weight:bold; border-radius:50%;">N▲</div></div><div style="margin-top:10px;">${tabHTML}</div></div>`;
                     
                     document.getElementById('doc-render-area').innerHTML = finalHTML;
                 }).catch(e => { alert("Erro ao gerar mapa. Use o tema Escuro."); document.querySelector('.leaflet-control-container').style.display = 'block'; });
@@ -1127,7 +1157,6 @@
             document.getElementById('doc-preview-container').style.display = 'block';
         }
 
-        // Inicializa o ambiente com a "Layer 0"
         inicializarSistemaCAD();
     </script>
 </body>
