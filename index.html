@@ -112,7 +112,6 @@
 
         .doc-preview-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #525659; padding: 20px; overflow-y: auto; display: none; z-index: 10000; box-sizing: border-box;}
         
-        /* CSS IDÊNTICO AO DOCUMENTO WORD (Padrão ABNT) */
         .doc-page { background: white; color: black; width: 210mm; min-height: 297mm; margin: 0 auto 20px auto; padding: 20mm; box-shadow: 0 10px 30px rgba(0,0,0,0.8); font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; box-sizing: border-box; position: relative;}
         .doc-page h2 { text-align: left; font-size: 12pt; font-family: Arial, sans-serif; font-weight: bold; margin-bottom: 15px; border: none;}
         .doc-page h3 { text-align: left; font-size: 11pt; font-family: Arial, sans-serif; font-weight: bold; margin-top: 20px; margin-bottom: 10px;}
@@ -271,13 +270,14 @@
                     <button class="btn btn-outline btn-small" onclick="marcarTodasColunas(true)">Marcar Tudo</button>
                     <button class="btn btn-outline btn-small" onclick="marcarTodasColunas(false)">Limpar Tudo</button>
                 </div>
-                <div id="filtro-colunas-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 180px; overflow-y: auto; padding: 10px; background: #121212; border: 1px solid var(--border); border-radius: 4px;">
+                <div id="filtro-colunas-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 120px; overflow-y: auto; padding: 10px; background: #121212; border: 1px solid var(--border); border-radius: 4px;">
                     <p style="font-size: 10px; color: #555; width: 100%; text-align: center; margin: 0;">Importe um arquivo SHP/ZIP na aba CAD para ver as colunas e atributos.</p>
                 </div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
                 <button class="btn btn-warning btn-block" onclick="baixarDXF()">📐 Exportar AutoCAD (.DXF)</button>
+                <button class="btn btn-block" style="background-color:#0277bd; border-color:#0277bd;" onclick="baixarKMZ()">🌎 Exportar Google Earth (.KMZ)</button>
                 <button class="btn btn-success btn-block" onclick="baixarCSV()">📊 Exportar Tabela (.CSV)</button>
                 <button class="btn btn-purple btn-block" onclick="baixarGeoJSON()">🌍 Exportar GIS (.GeoJSON)</button>
             </div>
@@ -857,13 +857,13 @@
             
             if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
                 var ptProj = proj4(epsgU, epsgD, [layer.getLatLng().lng, layer.getLatLng().lat]);
-                dxfStr += `0\nPOINT\n8\n${lName}\n${colorStr}10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`;
+                dxfStr += `0\nPOINT\n8\n${lName}\n${colorStr}10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0.0000\n`;
             } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
                 var latlngs = (layer instanceof L.Polygon) ? layer.getLatLngs()[0] : layer.getLatLngs();
                 dxfStr += `0\nPOLYLINE\n8\n${lName}\n${colorStr}66\n1\n70\n1\n`;
                 latlngs.forEach(ll => {
                     var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]);
-                    dxfStr += `0\nVERTEX\n8\n${lName}\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`;
+                    dxfStr += `0\nVERTEX\n8\n${lName}\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0.0000\n`;
                 });
                 dxfStr += "0\nSEQEND\n";
             } else if (layer instanceof L.LayerGroup || layer instanceof L.FeatureGroup) {
@@ -953,21 +953,30 @@
             if (!hasRtkPt && !hasRtkPoly && !hasLayers && !hasCAD) { alert("Nenhum dado visível para exportar."); return; }
 
             var fmtOut = document.getElementById('out-formato').value; var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU;
-            var dxf = "0\nSECTION\n2\nENTITIES\n";
+            
+            // Adicionado HEADER minimo para compatibilidade com AutoCAD Moderno (AC1015 = AutoCAD 2000+)
+            var dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
             
             var pts = obterCoordenadasExportacao();
             var colorRTK = hexToDxf420('#0098ff');
             
             if (hasRtkPoly) {
                 dxf += `0\nPOLYLINE\n8\nLEVANTAMENTO_RTK_LINHAS\n420\n${colorRTK}\n66\n1\n70\n1\n`; 
-                for(var i=0; i<pts.length; i++) dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK_LINHAS\n10\n${pts[i].x.toFixed(4)}\n20\n${pts[i].y.toFixed(4)}\n30\n${pts[i].z}\n`; dxf += "0\nSEQEND\n";
+                for(var i=0; i<pts.length; i++) {
+                    let zVal = Number(pts[i].z || 0).toFixed(4);
+                    dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK_LINHAS\n10\n${pts[i].x.toFixed(4)}\n20\n${pts[i].y.toFixed(4)}\n30\n${zVal}\n`; 
+                }
+                dxf += "0\nSEQEND\n";
             }
             
             if (hasRtkPt) {
                 for(var j=0; j<pts.length; j++) { 
-                    dxf += `0\nPOINT\n8\nPONTOS_RTK\n420\n${colorRTK}\n10\n${pts[j].x.toFixed(4)}\n20\n${pts[j].y.toFixed(4)}\n30\n${pts[j].z}\n`; 
+                    let zVal = Number(pts[j].z || 0).toFixed(4);
+                    let safeNome = String(pts[j].nome).replace(/[\n\r]/g, ' '); // Remove quebras invisíveis
+
+                    dxf += `0\nPOINT\n8\nPONTOS_RTK\n420\n${colorRTK}\n10\n${pts[j].x.toFixed(4)}\n20\n${pts[j].y.toFixed(4)}\n30\n${zVal}\n`; 
                     var rtkX = pts[j].x.toFixed(4); var rtkY = (pts[j].y + 1.5).toFixed(4); 
-                    dxf += `0\nTEXT\n8\nTEXTOS_RTK\n420\n${colorRTK}\n10\n${rtkX}\n20\n${rtkY}\n30\n${pts[j].z}\n40\n1.5\n1\n${pts[j].nome}\n72\n1\n11\n${rtkX}\n21\n${rtkY}\n31\n${pts[j].z}\n73\n2\n`; 
+                    dxf += `0\nTEXT\n8\nTEXTOS_RTK\n420\n${colorRTK}\n10\n${rtkX}\n20\n${rtkY}\n30\n${zVal}\n40\n1.5\n1\n${safeNome}\n72\n1\n11\n${rtkX}\n21\n${rtkY}\n31\n${zVal}\n73\n2\n`; 
                 }
             }
 
@@ -990,7 +999,7 @@
                     var rings = extractRings(feat.geometry.coordinates, feat.geometry.type); 
                     rings.forEach(ring => { 
                         dxf += `0\nPOLYLINE\n8\n${lName}\n420\n${cInt}\n66\n1\n70\n1\n`; 
-                        ring.forEach(coord => { var ptProj = proj4(epsgU, epsgD, [coord[0], coord[1]]); dxf += `0\nVERTEX\n8\n${lName}\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0\n`; }); 
+                        ring.forEach(coord => { var ptProj = proj4(epsgU, epsgD, [coord[0], coord[1]]); dxf += `0\nVERTEX\n8\n${lName}\n10\n${ptProj[0].toFixed(4)}\n20\n${ptProj[1].toFixed(4)}\n30\n0.0000\n`; }); 
                         dxf += "0\nSEQEND\n"; 
                     }); 
 
@@ -1000,7 +1009,7 @@
                         var textosAtivos = [];
                         for (var k in colunasGlobais) {
                             if (colunasGlobais[k] === true && feat.properties[k] !== undefined && feat.properties[k] !== null) {
-                                textosAtivos.push(`${feat.properties[k]}`); 
+                                textosAtivos.push(String(feat.properties[k]).replace(/[\n\r]/g, ' ')); 
                             }
                         }
                         if(textosAtivos.length > 0) {
@@ -1008,13 +1017,83 @@
                             var startY = ptProj[1] + ((textosAtivos.length - 1) * espacamentoY / 2);
                             textosAtivos.forEach((txt, idx) => {
                                 var y = startY - (idx * espacamentoY);
-                                dxf += `0\nTEXT\n8\n${lName}_TEXTOS\n420\n${cInt}\n10\n${ptProj[0].toFixed(4)}\n20\n${y.toFixed(4)}\n30\n0\n40\n1.5\n1\n${txt}\n72\n1\n11\n${ptProj[0].toFixed(4)}\n21\n${y.toFixed(4)}\n31\n0\n73\n2\n`;
+                                dxf += `0\nTEXT\n8\n${lName}_TEXTOS\n420\n${cInt}\n10\n${ptProj[0].toFixed(4)}\n20\n${y.toFixed(4)}\n30\n0.0000\n40\n1.5\n1\n${txt}\n72\n1\n11\n${ptProj[0].toFixed(4)}\n21\n${y.toFixed(4)}\n31\n0.0000\n73\n2\n`;
                             });
                         }
                     } catch(e) {}
                 }); 
             }
             dxf += "0\nENDSEC\n0\nEOF"; baixarArquivo("LuiGIS_Projeto.dxf", dxf, "application/dxf");
+        }
+
+        async function baixarKMZ() {
+            var kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n<name>LuiGIS Export</name>\n`;
+            
+            var isRtkPtVis = gerenciadorCamadas.find(c => c.id === 'rtk_pt')?.visivel !== false;
+            var isRtkPolyVis = gerenciadorCamadas.find(c => c.id === 'rtk_poly')?.visivel !== false;
+
+            if(memoria.lon.length > 0 && isRtkPtVis) {
+                kml += `<Folder><name>Vértices RTK</name>\n`;
+                for(var i=0; i<memoria.lon.length; i++) {
+                    kml += `<Placemark><name>${memoria.nomes[i]}</name><Point><coordinates>${memoria.lon[i]},${memoria.lat[i]},${memoria.cotas[i]||0}</coordinates></Point></Placemark>\n`;
+                }
+                kml += `</Folder>\n`;
+            }
+            
+            if(memoria.lon.length > 2 && isRtkPolyVis) {
+                var coordsStr = "";
+                for(var i=0; i<memoria.lon.length; i++) { coordsStr += `${memoria.lon[i]},${memoria.lat[i]},${memoria.cotas[i]||0} `; }
+                coordsStr += `${memoria.lon[0]},${memoria.lat[0]},${memoria.cotas[0]||0}`;
+                kml += `<Placemark><name>Perímetro do Levantamento</name><Style><LineStyle><color>ff0098ff</color><width>2</width></LineStyle><PolyStyle><color>330098ff</color></PolyStyle></Style><Polygon><outerBoundaryIs><LinearRing><coordinates>${coordsStr}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>\n`;
+            }
+
+            var epsgU = "+proj=longlat +datum=WGS84 +no_defs";
+            gerenciadorCamadas.filter(c => c.visivel && (c.tipo === 'cad' || c.tipo === 'shp')).forEach(cam => {
+                var safeName = cam.nome.replace(/[^a-zA-Z0-9\s_]/g, '').trim();
+                kml += `<Folder><name>${safeName}</name>\n`;
+                
+                if(cam.tipo === 'cad') {
+                    cam.leafletLayer.eachLayer(l => {
+                        if(l instanceof L.Marker || l instanceof L.CircleMarker) {
+                            var ll = l.getLatLng();
+                            kml += `<Placemark><name>Ponto CAD</name><Point><coordinates>${ll.lng},${ll.lat},0</coordinates></Point></Placemark>\n`;
+                        } else if(l instanceof L.Polygon || l instanceof L.Polyline) {
+                            var latlngs = l instanceof L.Polygon ? l.getLatLngs()[0] : l.getLatLngs();
+                            var cStr = latlngs.map(ll => `${ll.lng},${ll.lat},0`).join(" ");
+                            if(l instanceof L.Polygon) cStr += ` ${latlngs[0].lng},${latlngs[0].lat},0`;
+                            var tag = l instanceof L.Polygon ? "Polygon" : "LineString";
+                            var inner = l instanceof L.Polygon ? `<outerBoundaryIs><LinearRing><coordinates>${cStr}</coordinates></LinearRing></outerBoundaryIs>` : `<coordinates>${cStr}</coordinates>`;
+                            kml += `<Placemark><name>Geometria CAD</name><${tag}>${inner}</${tag}></Placemark>\n`;
+                        }
+                    });
+                } else if(cam.tipo === 'shp' && cam.rawGeoJSON) {
+                    var items = cam.rawGeoJSON.features ? cam.rawGeoJSON.features : (cam.rawGeoJSON.type === 'Feature' ? [cam.rawGeoJSON] : []);
+                    items.forEach((feat) => {
+                        try {
+                            if(feat.geometry.type === "Point") {
+                                kml += `<Placemark><name>${feat.properties.Nome||'Ponto'}</name><Point><coordinates>${feat.geometry.coordinates[0]},${feat.geometry.coordinates[1]},0</coordinates></Point></Placemark>\n`;
+                            } else if(feat.geometry.type === "LineString") {
+                                var cStr = feat.geometry.coordinates.map(c => `${c[0]},${c[1]},0`).join(" ");
+                                kml += `<Placemark><name>Linha</name><LineString><coordinates>${cStr}</coordinates></LineString></Placemark>\n`;
+                            } else if(feat.geometry.type === "Polygon") {
+                                var cStr = feat.geometry.coordinates[0].map(c => `${c[0]},${c[1]},0`).join(" ");
+                                kml += `<Placemark><name>Polígono</name><Polygon><outerBoundaryIs><LinearRing><coordinates>${cStr}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>\n`;
+                            }
+                        } catch(e) {}
+                    });
+                }
+                kml += `</Folder>\n`;
+            });
+
+            kml += `</Document>\n</kml>`;
+            
+            var zip = new JSZip();
+            zip.file("doc.kml", kml);
+            var content = await zip.generateAsync({type:"blob"});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(content);
+            a.download = "LuiGIS_Export.kmz";
+            a.click();
         }
 
         function baixarGeoJSON() {
