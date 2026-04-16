@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>LuiGIS | BETA 1</title>
+    <title>LuiGIS | BETA</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -553,9 +553,6 @@
             return null;
         }
 
-        // =========================================================================
-        // NOVO SISTEMA DE UNDO (CTRL + Z) COM TOASTS VISUAIS
-        // =========================================================================
         var historicoAcoes = []; 
 
         function desfazerAcao() {
@@ -597,7 +594,6 @@
         }
 
         document.addEventListener('keydown', function(e) {
-            // Evita acionar o Ctrl+Z se o usuário estiver digitando um texto numa caixa
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
 
             if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) {
@@ -637,7 +633,6 @@
             });
             historicoAcoes.push({ tipo: 'remove', layer: e.layer, parentLayer: parent });
         });
-        // =========================================================================
 
         function limparLayerAtiva() {
             var activeLayerData = getActiveCadLayerData();
@@ -686,9 +681,9 @@
             var sP = document.getElementById('db-prop-select'); sP.innerHTML = '<option value="novo">-- Cadastrar Nova Propriedade --</option>'; dbProps.forEach(p => sP.innerHTML += `<option value="${p.id}">${p.nome} (${p.dono})</option>`); if(dbProps.length > 0) { sP.value = dbProps[0].id; carregarPropriedade(); }
         }
         function carregarTecnico() { var id = document.getElementById('db-tecnico-select').value; if (id === 'novo') { document.getElementById('tec-nome').value = ''; document.getElementById('tec-formacao').value = ''; return; } var t = dbTecnicos.find(x => x.id === id); if(t) { document.getElementById('tec-nome').value = t.nome; document.getElementById('tec-formacao').value = t.formacao; document.getElementById('tec-crea').value = t.crea; } }
-        function salvarTecnico() { var t = { id: 't_' + Date.now(), nome: document.getElementById('tec-nome').value, formacao: document.getElementById('tec-formacao').value, crea: document.getElementById('tec-crea').value }; dbTecnicos.push(t); localStorage.setItem('docgeo_tecnicos', JSON.stringify(dbTecnicos)); atualizarSelectsDB(); alert("Técnico salvo!"); }
+        function salvarTecnico() { var t = { id: 't_' + Date.now(), nome: document.getElementById('tec-nome').value, formacao: document.getElementById('tec-formacao').value, crea: document.getElementById('tec-crea').value }; dbTecnicos.push(t); localStorage.setItem('docgeo_tecnicos', JSON.stringify(dbTecnicos)); atualizarSelectsDB(); mostrarToast("Técnico salvo!"); }
         function carregarPropriedade() { var id = document.getElementById('db-prop-select').value; if (id === 'novo') return; var p = dbProps.find(x => x.id === id); if(p) { document.getElementById('prop-dono').value = p.dono; document.getElementById('prop-nome').value = p.nome; document.getElementById('prop-mun').value = p.mun; document.getElementById('prop-mat').value = p.mat; } }
-        function salvarPropriedade() { var p = { id: 'p_' + Date.now(), dono: document.getElementById('prop-dono').value, nome: document.getElementById('prop-nome').value, mun: document.getElementById('prop-mun').value, mat: document.getElementById('prop-mat').value }; dbProps.push(p); localStorage.setItem('docgeo_props', JSON.stringify(dbProps)); atualizarSelectsDB(); alert("Propriedade salva!"); }
+        function salvarPropriedade() { var p = { id: 'p_' + Date.now(), dono: document.getElementById('prop-dono').value, nome: document.getElementById('prop-nome').value, mun: document.getElementById('prop-mun').value, mat: document.getElementById('prop-mat').value }; dbProps.push(p); localStorage.setItem('docgeo_props', JSON.stringify(dbProps)); atualizarSelectsDB(); mostrarToast("Propriedade salva!"); }
         atualizarSelectsDB();
 
         document.getElementById('main-formato').addEventListener('change', function(e) { document.getElementById('utm-options').style.display = (e.target.value === 'utm') ? 'flex' : 'none'; });
@@ -930,28 +925,47 @@
         function extractRings(coords, type) { if(type === 'LineString') return [coords]; if(type === 'Polygon') return coords; if(type === 'MultiLineString') return coords; if(type === 'MultiPolygon') { let rings = []; coords.forEach(poly => poly.forEach(ring => rings.push(ring))); return rings; } return []; }
         function baixarArquivo(n, c, t) { var b = new Blob([c], {type: t}); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); }
 
-        function hexToDxf420(hex) {
-            if (!hex) return 0;
-            return parseInt(hex.replace('#', ''), 16);
+        // ==========================================================
+        // DXF FIX: Conversor universal de HEX para Cor AutoCAD (1-255)
+        // ==========================================================
+        function hexToACI(hex) {
+            if (!hex) return 7; // Branco/Preto default
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+            var r = parseInt(hex.substring(0,2), 16);
+            var g = parseInt(hex.substring(2,4), 16);
+            var b = parseInt(hex.substring(4,6), 16);
+            
+            if (r>150 && g<100 && b<100) return 1; // Vermelho
+            if (r>150 && g>150 && b<100) return 2; // Amarelo
+            if (r<100 && g>150 && b<100) return 3; // Verde
+            if (r<100 && g>150 && b>150) return 4; // Ciano
+            if (r<100 && g<100 && b>150) return 5; // Azul
+            if (r>150 && g<100 && b>150) return 6; // Magenta
+            if (r<100 && g<100 && b<100) return 8; // Cinza Escuro
+            return 7; 
         }
-        
-        // FORMATADOR SEGURO PARA DXF: Previne 'NaN' que quebra o AutoCAD
+
+        // DXF FIX: Formatação segura para coordenadas (Evita o NaN)
         function nFormat(val) {
             let n = Number(val);
-            if (isNaN(n)) return "0.0000";
+            if (isNaN(n) || !isFinite(n)) return "0.0000";
             return n.toFixed(4);
         }
 
         function exportDxfEntity(layer, epsgU, epsgD, lName, hexColor) {
             let dxfStr = "";
-            let colorStr = hexColor ? `420\n${hexToDxf420(hexColor)}\n` : "";
+            let cInt = hexToACI(hexColor);
             
             if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
                 var ptProj = proj4(epsgU, epsgD, [layer.getLatLng().lng, layer.getLatLng().lat]);
-                dxfStr += `0\nPOINT\n8\n${lName}\n${colorStr}10\n${nFormat(ptProj[0])}\n20\n${nFormat(ptProj[1])}\n30\n0.0000\n`;
+                dxfStr += `0\nPOINT\n8\n${lName}\n62\n${cInt}\n10\n${nFormat(ptProj[0])}\n20\n${nFormat(ptProj[1])}\n30\n0.0000\n`;
             } else if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
                 var latlngs = (layer instanceof L.Polygon) ? layer.getLatLngs()[0] : layer.getLatLngs();
-                dxfStr += `0\nPOLYLINE\n8\n${lName}\n${colorStr}66\n1\n70\n1\n`;
+                var fechado = (layer instanceof L.Polygon) ? 1 : 0;
+                
+                // DXF FIX: Polilinha SEMPRE precisa do 10, 20, 30 de base antes dos vértices
+                dxfStr += `0\nPOLYLINE\n8\n${lName}\n62\n${cInt}\n66\n1\n70\n${fechado}\n10\n0.0\n20\n0.0\n30\n0.0\n`;
                 latlngs.forEach(ll => {
                     var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]);
                     dxfStr += `0\nVERTEX\n8\n${lName}\n10\n${nFormat(ptProj[0])}\n20\n${nFormat(ptProj[1])}\n30\n0.0000\n`;
@@ -1046,27 +1060,30 @@
 
             var fmtOut = document.getElementById('out-formato').value; var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU;
             
-            // CORREÇÃO CRÍTICA DO DXF: Header AutoCAD 2013 (AC1027) permite uso de cores 420 (TrueColor)
-            var dxf = "0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1027\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
+            // DXF FIX: Removido o Header completamente. Assim o AutoCAD interpreta como DXF R12 à prova de bala.
+            var dxf = "0\nSECTION\n2\nENTITIES\n";
             
             var pts = obterCoordenadasExportacao();
-            var colorRTK = hexToDxf420('#0098ff') || 39167; // Fallback seguro
+            var colorRTK = 4; // Ciano
             
             if (hasRtkPoly) {
-                dxf += `0\nPOLYLINE\n8\nLEVANTAMENTO_RTK_LINHAS\n420\n${colorRTK}\n66\n1\n70\n1\n`; 
+                // DXF FIX: 10, 20 e 30 inseridos no cabeçalho
+                dxf += `0\nPOLYLINE\n8\nLEVANTAMENTO_RTK\n62\n${colorRTK}\n66\n1\n70\n1\n10\n0.0\n20\n0.0\n30\n0.0\n`; 
                 for(var i=0; i<pts.length; i++) {
-                    dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK_LINHAS\n10\n${nFormat(pts[i].x)}\n20\n${nFormat(pts[i].y)}\n30\n${nFormat(pts[i].z)}\n`; 
+                    dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK\n10\n${nFormat(pts[i].x)}\n20\n${nFormat(pts[i].y)}\n30\n${nFormat(pts[i].z)}\n`; 
                 }
                 dxf += "0\nSEQEND\n";
             }
             
             if (hasRtkPt) {
                 for(var j=0; j<pts.length; j++) { 
-                    let safeNome = String(pts[j].nome || "P").replace(/[\n\r]/g, ' ').trim(); // Limpeza agressiva
+                    let safeNome = String(pts[j].nome || "P").replace(/[\n\r]/g, ' ').trim(); 
 
-                    dxf += `0\nPOINT\n8\nPONTOS_RTK\n420\n${colorRTK}\n10\n${nFormat(pts[j].x)}\n20\n${nFormat(pts[j].y)}\n30\n${nFormat(pts[j].z)}\n`; 
+                    dxf += `0\nPOINT\n8\nPONTOS_RTK\n62\n${colorRTK}\n10\n${nFormat(pts[j].x)}\n20\n${nFormat(pts[j].y)}\n30\n${nFormat(pts[j].z)}\n`; 
                     var rtkX = nFormat(pts[j].x); var rtkY = nFormat(Number(pts[j].y) + 1.5); 
-                    dxf += `0\nTEXT\n8\nTEXTOS_RTK\n420\n${colorRTK}\n10\n${rtkX}\n20\n${rtkY}\n30\n${nFormat(pts[j].z)}\n40\n1.5\n1\n${safeNome}\n72\n1\n11\n${rtkX}\n21\n${rtkY}\n31\n${nFormat(pts[j].z)}\n73\n2\n`; 
+                    
+                    // DXF FIX: Texto limpo, sem códigos confusos de alinhamento 72/73
+                    dxf += `0\nTEXT\n8\nTEXTOS_RTK\n62\n${colorRTK}\n10\n${rtkX}\n20\n${rtkY}\n30\n${nFormat(pts[j].z)}\n40\n1.5\n1\n${safeNome}\n`; 
                 }
             }
 
@@ -1086,11 +1103,14 @@
                     var feat = item.f;
                     var lName = item.lName.replace("☁️ ", "").replace(/[^a-zA-Z0-9_-]/g, '_').toUpperCase();
                     if(lName === "") lName = "SHAPEFILE";
-                    var cInt = hexToDxf420(item.color) || 16777215;
+                    var cInt = hexToACI(item.color);
 
                     var rings = extractRings(feat.geometry.coordinates, feat.geometry.type); 
+                    var fechado = feat.geometry.type.includes('Polygon') ? 1 : 0;
+                    
                     rings.forEach(ring => { 
-                        dxf += `0\nPOLYLINE\n8\n${lName}\n420\n${cInt}\n66\n1\n70\n1\n`; 
+                        // DXF FIX: 10, 20 e 30 inseridos no cabeçalho
+                        dxf += `0\nPOLYLINE\n8\n${lName}\n62\n${cInt}\n66\n1\n70\n${fechado}\n10\n0.0\n20\n0.0\n30\n0.0\n`; 
                         ring.forEach(coord => { var ptProj = proj4(epsgU, epsgD, [coord[0], coord[1]]); dxf += `0\nVERTEX\n8\n${lName}\n10\n${nFormat(ptProj[0])}\n20\n${nFormat(ptProj[1])}\n30\n0.0000\n`; }); 
                         dxf += "0\nSEQEND\n"; 
                     }); 
@@ -1110,14 +1130,14 @@
                             textosAtivos.forEach((txt, idx) => {
                                 if(txt === "") return;
                                 var y = startY - (idx * espacamentoY);
-                                dxf += `0\nTEXT\n8\n${lName}_TEXTOS\n420\n${cInt}\n10\n${nFormat(ptProj[0])}\n20\n${nFormat(y)}\n30\n0.0000\n40\n1.5\n1\n${txt}\n72\n1\n11\n${nFormat(ptProj[0])}\n21\n${nFormat(y)}\n31\n0.0000\n73\n2\n`;
+                                dxf += `0\nTEXT\n8\n${lName}_TEXTOS\n62\n${cInt}\n10\n${nFormat(ptProj[0])}\n20\n${nFormat(y)}\n30\n0.0000\n40\n1.5\n1\n${txt}\n`;
                             });
                         }
                     } catch(e) {}
                 }); 
             }
-            dxf += "0\nENDSEC\n0\nEOF"; baixarArquivo("LuiGIS_Projeto.dxf", dxf, "application/dxf");
-            mostrarToast("DXF Criado!");
+            dxf += "0\nENDSEC\n0\nEOF\n"; baixarArquivo("LuiGIS_Projeto.dxf", dxf, "application/dxf");
+            mostrarToast("DXF Criado e Exportado!");
         }
 
         async function baixarKMZ() {
