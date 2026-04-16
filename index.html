@@ -533,6 +533,46 @@
             return null;
         }
 
+        // =========================================================================
+        // SISTEMA DE UNDO (CTRL + Z) - ESTILO CAD
+        // =========================================================================
+        var historicoAcoes = []; 
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) {
+                e.preventDefault(); 
+
+                var desenhoAtivo = null;
+                if (map.pm.Draw.Polygon && map.pm.Draw.Polygon.enabled()) desenhoAtivo = map.pm.Draw.Polygon;
+                else if (map.pm.Draw.Line && map.pm.Draw.Line.enabled()) desenhoAtivo = map.pm.Draw.Line;
+
+                if (desenhoAtivo) {
+                    if (typeof desenhoAtivo._removeLastVertex === 'function') {
+                        desenhoAtivo._removeLastVertex();
+                    }
+                    return; 
+                }
+
+                if (historicoAcoes.length > 0) {
+                    var ultimaAcao = historicoAcoes.pop();
+                    
+                    if (ultimaAcao.tipo === 'add') {
+                        map.removeLayer(ultimaAcao.layer);
+                        if (ultimaAcao.parentLayer && ultimaAcao.parentLayer.hasLayer(ultimaAcao.layer)) {
+                            ultimaAcao.parentLayer.removeLayer(ultimaAcao.layer);
+                        }
+                    } 
+                    else if (ultimaAcao.tipo === 'remove') {
+                        if (ultimaAcao.parentLayer) {
+                            ultimaAcao.parentLayer.addLayer(ultimaAcao.layer);
+                        } else {
+                            ultimaAcao.layer.addTo(map);
+                        }
+                    }
+                }
+            }
+        });
+
         map.on('pm:create', function(e) {
             var layer = e.layer;
             var activeLayerData = getActiveCadLayerData();
@@ -552,7 +592,19 @@
             } 
             
             layer.addTo(activeLayerData.leafletLayer);
+            historicoAcoes.push({ tipo: 'add', layer: layer, parentLayer: activeLayerData.leafletLayer });
         });
+
+        map.on('pm:remove', function(e) {
+            var parent = null;
+            gerenciadorCamadas.forEach(c => {
+                if (c.leafletLayer && c.leafletLayer.hasLayer && c.leafletLayer.hasLayer(e.layer)) {
+                    parent = c.leafletLayer;
+                }
+            });
+            historicoAcoes.push({ tipo: 'remove', layer: e.layer, parentLayer: parent });
+        });
+        // =========================================================================
 
         function limparLayerAtiva() {
             var activeLayerData = getActiveCadLayerData();
