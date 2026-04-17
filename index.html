@@ -20,6 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
@@ -138,6 +139,12 @@
         #toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); opacity: 0; animation: fadeToast 2s forwards; }
         @keyframes fadeToast { 0% { opacity: 0; transform: translateY(20px); } 15% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-20px); } }
+
+        /* Estilos do Modal de Gráfico */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10001; align-items: center; justify-content: center; }
+        .modal-content { background: var(--bg-panel); border: 1px solid var(--border); padding: 20px; border-radius: 8px; width: 80%; max-width: 800px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-header h3 { margin: 0; color: var(--purple); font-size: 16px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -147,7 +154,7 @@
     <aside id="left-sidebar">
         <div class="header">
             <h1>🌍 LuiGIS</h1>
-            <span style="font-size:10px; color:var(--warning); font-weight:bold;">BETA</span>
+            <span style="font-size:10px; color:var(--warning); font-weight:bold;">BETA 1</span>
         </div>
 
         <div class="tabs">
@@ -226,9 +233,17 @@
                     <button class="btn btn-outline btn-small" onclick="document.getElementById('arquivo-csv').click()">📂 LER ARQUIVO</button>
                     <input type="file" id="arquivo-csv" accept=".csv,.txt,.pdf" style="display:none;" onchange="lerArquivoEntrada(event)">
                 </div>
-                <textarea id="main-texto" style="height: 180px;" placeholder="ID; Descrição; Coordenada X (ou Long); Coordenada Y (ou Lat); Cota Z"></textarea>
+                <textarea id="main-texto" style="height: 100px;" placeholder="ID; Descrição; Coordenada X (ou Long); Coordenada Y (ou Lat); Cota Z"></textarea>
             </div>
             <button class="btn btn-primary btn-block" style="padding:15px; font-size:13px;" onclick="processarLevantamento()">📍 PLOTAR & LIGAR PONTOS</button>
+
+            <div class="card" style="border-color: var(--purple);">
+                <div class="card-title" style="color:var(--purple);">Análise Topográfica (Geosis)</div>
+                <button class="btn btn-outline btn-block" onclick="gerarCurvasNivel()" style="margin-bottom:6px; color:var(--purple); border-color:var(--purple);">🏔️ Gerar Curvas de Nível (MDT)</button>
+                <button class="btn btn-outline btn-block" onclick="abrirPerfilElevacao()" style="margin-bottom:6px; color:var(--purple); border-color:var(--purple);">📈 Perfil Longitudinal (Elevação)</button>
+                <button class="btn btn-outline btn-block" onclick="calcularFechamento()" style="color:var(--purple); border-color:var(--purple);">📊 Relatório de Poligonal (Tabelas)</button>
+            </div>
+
         </div>
 
         <div id="aba-editor" class="tab-content" style="padding:10px;">
@@ -412,6 +427,17 @@
             </div>
         </div>
         <div id="doc-render-area"></div>
+    </div>
+
+    <div id="modal-perfil" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📈 Perfil Longitudinal de Elevação</h3>
+                <button class="btn btn-danger btn-small" onclick="document.getElementById('modal-perfil').style.display='none'">❌ Fechar</button>
+            </div>
+            <canvas id="chartPerfil" width="800" height="300"></canvas>
+            <p style="text-align: center; font-size: 10px; color: #aaa; margin-top: 10px;">Perfil gerado acompanhando o perímetro da poligonal RTK da primeira até a última coordenada.</p>
+        </div>
     </div>
 
     <script>
@@ -782,6 +808,158 @@
             renderizarGestorCamadas();
         }
 
+        // ====================================================================
+        // NOVAS FERRAMENTAS ESTILO DATAGEOSIS (MDT, PERFIL, TABELAS)
+        // ====================================================================
+
+        function gerarCurvasNivel() {
+            if(memoria.lon.length < 3) return mostrarToast("Mínimo de 3 pontos necessários.");
+            var zVals = memoria.cotas;
+            var maxZ = Math.max(...zVals); 
+            var minZ = Math.min(...zVals);
+            if(maxZ === minZ || isNaN(maxZ)) return alert("Todos os pontos têm a mesma cota (ou cota zero). Impossível gerar curvas.");
+            
+            mostrarToast("Calculando malha triangular (MDT)...");
+            
+            setTimeout(() => {
+                try {
+                    // Criar os pontos Turf com as propriedades Z
+                    var pts = memoria.lon.map((lng, i) => turf.point([lng, memoria.lat[i]], {z: memoria.cotas[i]}));
+                    var fc = turf.featureCollection(pts);
+                    
+                    // Interpolação para criar a malha (Grid de 5 metros)
+                    var options = {gridType: 'points', property: 'z', units: 'meters', weight: 2};
+                    var grid = turf.interpolate(fc, 5, options); 
+                    
+                    // Definir os intervalos de quebra das curvas (Isolines)
+                    var breaks = [];
+                    var step = (maxZ - minZ) / 10; 
+                    if (step < 0.5) step = 0.5; // Resolução mínima
+                    for(var b = Math.floor(minZ); b <= Math.ceil(maxZ); b += step) breaks.push(b);
+                    
+                    var lines = turf.isolines(grid, breaks, {zProperty: 'z'});
+                    processarGeoJSON_NoMapa(lines, "MDT Curvas de Nível", "#c586c0", true);
+                    mostrarToast("Curvas geradas e adicionadas à aba CAD!");
+                } catch(e) {
+                    console.error(e);
+                    alert("Erro ao processar as curvas de nível. Tente reduzir o número de pontos.");
+                }
+            }, 100);
+        }
+
+        var chartInstance = null;
+        function abrirPerfilElevacao() {
+            if(memoria.lon.length < 2) return mostrarToast("Mínimo de 2 pontos necessários.");
+            
+            var modal = document.getElementById('modal-perfil');
+            modal.style.display = 'flex';
+            
+            var distancias = [0];
+            var labels = [memoria.nomes[0]];
+            var dataZ = [memoria.cotas[0]];
+            var distAcumulada = 0;
+            var epsgIn = obterEpsgEntrada();
+            
+            // Calcular distâncias progressivas acompanhando o perímetro da poligonal
+            for(var i = 1; i < memoria.lon.length; i++) {
+                var c1 = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgIn, [memoria.lon[i-1], memoria.lat[i-1]]);
+                var c2 = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgIn, [memoria.lon[i], memoria.lat[i]]);
+                
+                var dist = Math.sqrt(Math.pow(c2[0]-c1[0], 2) + Math.pow(c2[1]-c1[1], 2));
+                distAcumulada += dist;
+                
+                distancias.push(distAcumulada.toFixed(2));
+                labels.push(memoria.nomes[i]);
+                dataZ.push(memoria.cotas[i]);
+            }
+            
+            var ctx = document.getElementById('chartPerfil').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: distancias,
+                    datasets: [{
+                        label: 'Altitude (Metros)',
+                        data: dataZ,
+                        borderColor: '#c586c0',
+                        backgroundColor: 'rgba(197, 134, 192, 0.2)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { labels: { color: '#fff' } },
+                        tooltip: { callbacks: { title: function(context) { return "Vértice: " + labels[context[0].dataIndex]; } } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Distância Acumulada (m)', color: '#aaa' }, ticks: {color: '#888'} },
+                        y: { title: { display: true, text: 'Cota Z (m)', color: '#aaa' }, ticks: {color: '#888'} }
+                    }
+                }
+            });
+        }
+
+        function calcularFechamento() {
+            if(memoria.lon.length < 3) return mostrarToast("Mínimo de 3 pontos para formar uma poligonal.");
+            
+            var epsgIn = obterEpsgEntrada();
+            var trs = "";
+            var deltaE = 0, deltaN = 0;
+
+            for(var i = 0; i < memoria.lon.length; i++) {
+                var pProx = (i + 1) % memoria.lon.length;
+                var c1 = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgIn, [memoria.lon[i], memoria.lat[i]]);
+                var c2 = proj4("+proj=longlat +datum=WGS84 +no_defs", epsgIn, [memoria.lon[pProx], memoria.lat[pProx]]);
+                
+                var calc = calcAzimuteDist(c1[0], c1[1], c2[0], c2[1]);
+                
+                trs += `<tr>
+                    <td>${memoria.nomes[i]}</td>
+                    <td>${memoria.nomes[pProx]}</td>
+                    <td>${calc.azimute}</td>
+                    <td>${calc.dist} m</td>
+                    <td>${c1[0].toFixed(3)}</td>
+                    <td>${c1[1].toFixed(3)}</td>
+                    <td>${memoria.cotas[i].toFixed(2)}</td>
+                </tr>`;
+            }
+
+            var html = `
+            <div class="doc-page" style="background:#1a1a1c; color:#fff; width:100%; box-shadow:none; padding:10px;">
+                <h2 style="color:var(--purple); border-bottom:1px solid #333; padding-bottom:10px;">📊 Relatório Analítico da Poligonal (Topografia)</h2>
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; background:#111; padding:10px; border:1px solid #333; border-radius:4px;">
+                    <div><span style="color:#aaa;">Sistema de Coordenadas:</span> <br><b>${document.getElementById('main-datum').value}</b></div>
+                    <div><span style="color:#aaa;">Área Topográfica:</span> <br><b style="color:var(--warning);">${ultimaAreaCalculada.toFixed(3)} m²</b></div>
+                    <div><span style="color:#aaa;">Perímetro Total:</span> <br><b>${ultimoPerimetroCalculado.toFixed(3)} m</b></div>
+                </div>
+                <table class="popup-table" style="width:100%;">
+                    <thead><tr>
+                        <th>Ponto INICIAL</th>
+                        <th>Ponto VANTE</th>
+                        <th>Azimute Plano</th>
+                        <th>Dist. Horizontal</th>
+                        <th>Coordenada E (X)</th>
+                        <th>Coordenada N (Y)</th>
+                        <th>Cota (Z)</th>
+                    </tr></thead>
+                    <tbody>${trs}</tbody>
+                </table>
+            </div>`;
+
+            document.getElementById('doc-render-area').innerHTML = html;
+            document.getElementById('doc-preview-container').style.display = 'block';
+        }
+
+        // ====================================================================
+
         function baixarBaseSelecionada() { var select = document.getElementById('select-bases-nuvem'); var url = select.value; if(!url) { alert("Selecione um arquivo."); return; } var nomeLimpo = select.options[select.selectedIndex].text.replace(/[^\w\sÀ-ú]/g, '').trim().replace(/\s+/g, '_') + '.zip'; carregarBaseDaInternet(url, nomeLimpo); }
         async function carregarBaseDaInternet(urlDownload, nomeArquivoVisivel) {
             var loading = document.getElementById('loading-shp'); loading.style.display = 'block'; loading.innerText = `⏳ Baixando...`;
@@ -925,28 +1103,24 @@
         function extractRings(coords, type) { if(type === 'LineString') return [coords]; if(type === 'Polygon') return coords; if(type === 'MultiLineString') return coords; if(type === 'MultiPolygon') { let rings = []; coords.forEach(poly => poly.forEach(ring => rings.push(ring))); return rings; } return []; }
         function baixarArquivo(n, c, t) { var b = new Blob([c], {type: t}); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = n; a.click(); }
 
-        // ==========================================================
-        // DXF FIX: Conversor universal de HEX para Cor AutoCAD (1-255)
-        // ==========================================================
         function hexToACI(hex) {
-            if (!hex) return 7; // Branco/Preto default
+            if (!hex) return 7; 
             hex = hex.replace('#', '');
             if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
             var r = parseInt(hex.substring(0,2), 16);
             var g = parseInt(hex.substring(2,4), 16);
             var b = parseInt(hex.substring(4,6), 16);
             
-            if (r>150 && g<100 && b<100) return 1; // Vermelho
-            if (r>150 && g>150 && b<100) return 2; // Amarelo
-            if (r<100 && g>150 && b<100) return 3; // Verde
-            if (r<100 && g>150 && b>150) return 4; // Ciano
-            if (r<100 && g<100 && b>150) return 5; // Azul
-            if (r>150 && g<100 && b>150) return 6; // Magenta
-            if (r<100 && g<100 && b<100) return 8; // Cinza Escuro
+            if (r>150 && g<100 && b<100) return 1; 
+            if (r>150 && g>150 && b<100) return 2; 
+            if (r<100 && g>150 && b<100) return 3; 
+            if (r<100 && g>150 && b>150) return 4; 
+            if (r<100 && g<100 && b>150) return 5; 
+            if (r>150 && g<100 && b>150) return 6; 
+            if (r<100 && g<100 && b<100) return 8; 
             return 7; 
         }
 
-        // DXF FIX: Formatação segura para coordenadas (Evita o NaN)
         function nFormat(val) {
             let n = Number(val);
             if (isNaN(n) || !isFinite(n)) return "0.0000";
@@ -964,7 +1138,6 @@
                 var latlngs = (layer instanceof L.Polygon) ? layer.getLatLngs()[0] : layer.getLatLngs();
                 var fechado = (layer instanceof L.Polygon) ? 1 : 0;
                 
-                // DXF FIX: Polilinha SEMPRE precisa do 10, 20, 30 de base antes dos vértices
                 dxfStr += `0\nPOLYLINE\n8\n${lName}\n62\n${cInt}\n66\n1\n70\n${fechado}\n10\n0.0\n20\n0.0\n30\n0.0\n`;
                 latlngs.forEach(ll => {
                     var ptProj = proj4(epsgU, epsgD, [ll.lng, ll.lat]);
@@ -1060,14 +1233,12 @@
 
             var fmtOut = document.getElementById('out-formato').value; var epsgU = "+proj=longlat +datum=WGS84 +no_defs"; var epsgD = (fmtOut === 'utm') ? obterEpsgEntrada() : epsgU;
             
-            // DXF FIX: Removido o Header completamente. Assim o AutoCAD interpreta como DXF R12 à prova de bala.
             var dxf = "0\nSECTION\n2\nENTITIES\n";
             
             var pts = obterCoordenadasExportacao();
             var colorRTK = 4; // Ciano
             
             if (hasRtkPoly) {
-                // DXF FIX: 10, 20 e 30 inseridos no cabeçalho
                 dxf += `0\nPOLYLINE\n8\nLEVANTAMENTO_RTK\n62\n${colorRTK}\n66\n1\n70\n1\n10\n0.0\n20\n0.0\n30\n0.0\n`; 
                 for(var i=0; i<pts.length; i++) {
                     dxf += `0\nVERTEX\n8\nLEVANTAMENTO_RTK\n10\n${nFormat(pts[i].x)}\n20\n${nFormat(pts[i].y)}\n30\n${nFormat(pts[i].z)}\n`; 
@@ -1082,7 +1253,6 @@
                     dxf += `0\nPOINT\n8\nPONTOS_RTK\n62\n${colorRTK}\n10\n${nFormat(pts[j].x)}\n20\n${nFormat(pts[j].y)}\n30\n${nFormat(pts[j].z)}\n`; 
                     var rtkX = nFormat(pts[j].x); var rtkY = nFormat(Number(pts[j].y) + 1.5); 
                     
-                    // DXF FIX: Texto limpo, sem códigos confusos de alinhamento 72/73
                     dxf += `0\nTEXT\n8\nTEXTOS_RTK\n62\n${colorRTK}\n10\n${rtkX}\n20\n${rtkY}\n30\n${nFormat(pts[j].z)}\n40\n1.5\n1\n${safeNome}\n`; 
                 }
             }
@@ -1109,7 +1279,6 @@
                     var fechado = feat.geometry.type.includes('Polygon') ? 1 : 0;
                     
                     rings.forEach(ring => { 
-                        // DXF FIX: 10, 20 e 30 inseridos no cabeçalho
                         dxf += `0\nPOLYLINE\n8\n${lName}\n62\n${cInt}\n66\n1\n70\n${fechado}\n10\n0.0\n20\n0.0\n30\n0.0\n`; 
                         ring.forEach(coord => { var ptProj = proj4(epsgU, epsgD, [coord[0], coord[1]]); dxf += `0\nVERTEX\n8\n${lName}\n10\n${nFormat(ptProj[0])}\n20\n${nFormat(ptProj[1])}\n30\n0.0000\n`; }); 
                         dxf += "0\nSEQEND\n"; 
