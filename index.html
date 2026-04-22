@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>LuiGIS | BETA 1.5.3 - Professional Edition</title>
+    <title>LuiGIS | BETA 1.5.0 - Professional Edition</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -308,16 +308,22 @@
                         </select>
                     </div>
                 </div>
-                <label style="margin-top:5px;">Coordenadas de Entrada (uma por linha)</label>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; margin-bottom:5px;">
+                    <label style="margin:0;">Coordenadas (Cole ou Envie Arquivo)</label>
+                    <button class="btn btn-outline btn-small" onclick="document.getElementById('arquivo-conversor').click()">📂 LER TXT/CSV/LAND7</button>
+                    <input type="file" id="arquivo-conversor" accept=".csv,.txt,.land7" style="display:none;" onchange="lerArquivoConversor(event)">
+                </div>
                 <textarea id="conv-texto-in" style="height: 120px;" placeholder="Ex:\n566199.436 , 7790687.840\n566230.409 , 7790665.110"></textarea>
+                
                 <div style="display:flex; gap:10px; margin-top:5px;">
-                    <button class="btn btn-success btn-block" onclick="executarConversorGeral()">🔄 Converter</button>
+                    <button class="btn btn-success btn-block" onclick="executarConversorGeral()">🔄 Converter para SIG-RI</button>
                     <button class="btn btn-outline" style="border-color:#f44336; color:#f44336;" onclick="document.getElementById('conv-texto-in').value=''; document.getElementById('conv-texto-out').value='';">Limpar</button>
                 </div>
             </div>
 
             <div class="card" style="border-color: var(--accent);">
-                <div class="card-title" style="color: var(--accent);">Configuração de Saída</div>
+                <div class="card-title" style="color: var(--accent);">Saída: Padrão SIG-RI</div>
                 <div class="form-row">
                     <div><label>Formato de Saída</label>
                         <select id="conv-fmt-out" onchange="toggleConvParams('out')">
@@ -345,7 +351,7 @@
                 <div class="form-row" style="margin-top:4px;">
                     <div style="flex:0.5;"><label>Casas Decimais</label><input type="number" id="conv-decimais" value="15"></div>
                 </div>
-                <label style="margin-top:5px;">Resultado (Copiável)</label>
+                <label style="margin-top:5px;">Resultado (Fechado e Formatado)</label>
                 <textarea id="conv-texto-out" style="height: 120px;" readonly></textarea>
             </div>
         </div>
@@ -942,6 +948,20 @@
                 };
                 reader.readAsArrayBuffer(file);
             } else { var reader = new FileReader(); reader.onload = ev => document.getElementById('main-texto').value = ev.target.result; reader.readAsText(file); }
+            e.target.value = ''; // Reseta para permitir reenviar o mesmo arquivo
+        }
+
+        // NOVO: Função exclusiva para ler arquivos direto na aba do Conversor
+        function lerArquivoConversor(e) {
+            var file = e.target.files[0]; 
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                document.getElementById('conv-texto-in').value = ev.target.result;
+                mostrarToast("Arquivo " + file.name + " carregado no Conversor!");
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reseta
         }
 
         function obterEpsgEntrada() { var fmtIn = document.getElementById('main-formato').value; var datum = document.getElementById('main-datum').value; var projDatum = datumsDef[datum]; if(fmtIn === 'utm') { var zona = document.getElementById('main-zona').value; var projHemi = (document.getElementById('main-hemi').value === 'S') ? '+south ' : ''; return `+proj=utm +zone=${zona} ${projHemi}${projDatum} +units=m +no_defs`; } return `+proj=longlat ${projDatum} +no_defs`; }
@@ -1022,9 +1042,6 @@
             }
         }
 
-        // =========================================
-        // ATUALIZAÇÃO: DESENHAR MÚLTIPLOS POLÍGONOS
-        // =========================================
         function processarLevantamento() {
             var txt = document.getElementById('main-texto').value; if(!txt.trim()) { alert("Insira dados."); return; }
             var chkMulti = document.getElementById('chk-multi-poly') && document.getElementById('chk-multi-poly').checked;
@@ -1826,101 +1843,100 @@
             }
         }
 
-function executarConversorGeral() {
-    var fmtIn = document.getElementById('conv-fmt-in').value;
-    var datumIn = document.getElementById('conv-datum-in').value;
-    var fmtOut = document.getElementById('conv-fmt-out').value;
-    var datumOut = document.getElementById('conv-datum-out').value;
-    var casasDec = parseInt(document.getElementById('conv-decimais').value) || 15;
-    var txtIn = document.getElementById('conv-texto-in').value;
+        function executarConversorGeral() {
+            var fmtIn = document.getElementById('conv-fmt-in').value;
+            var datumIn = document.getElementById('conv-datum-in').value;
+            var fmtOut = document.getElementById('conv-fmt-out').value;
+            var datumOut = document.getElementById('conv-datum-out').value;
+            var casasDec = parseInt(document.getElementById('conv-decimais').value) || 15;
+            var txtIn = document.getElementById('conv-texto-in').value;
 
-    if(!txtIn.trim()) return alert("Insira coordenadas na caixa de entrada para converter.");
+            if(!txtIn.trim()) return alert("Insira coordenadas na caixa de entrada para converter.");
 
-    var getProjStr = (fmt, datum, prefix) => {
-        var projDatum = datumsDef[datum];
-        if(fmt === 'utm') {
-            var zona = document.getElementById(`conv-zona-${prefix}`).value || 23;
-            var hemi = document.getElementById(`conv-hemi-${prefix}`).value === 'S' ? '+south ' : '';
-            return `+proj=utm +zone=${zona} ${hemi}${projDatum} +units=m +no_defs`;
-        }
-        return `+proj=longlat ${projDatum} +no_defs`;
-    };
-
-    var epsgIn = getProjStr(fmtIn, datumIn, 'in');
-    var epsgOut = getProjStr(fmtOut, datumOut, 'out');
-
-    // Separa o texto em blocos (polígonos separados por linha em branco)
-    var blocos = txtIn.split(/\n\s*\n/);
-    var outLinesAll = [];
-
-    blocos.forEach(bloco => {
-        var linhas = bloco.split('\n');
-        var outBloco = [];
-
-        linhas.forEach(linha => {
-            var l = linha.trim();
-            if(!l) return; // Ignora linhas vazias
-
-            var outX = null, outY = null;
-
-            // Tratamento de conversão (mantido igual, robusto)
-            if (fmtIn === 'sgl') {
-                var partesDMS = l.match(/(\d+[^\d]+\d+[^\d]+[\d.,]+[^\d]*[NSWE]?)/gi);
-                if (partesDMS && partesDMS.length >= 2) {
-                    var c1 = parseDMS(partesDMS[0]); var c2 = parseDMS(partesDMS[1]);
-                    var x, y;
-                    if (partesDMS[0].toUpperCase().includes('W') || partesDMS[0].toUpperCase().includes('O')) { x = c1; y = c2; } 
-                    else if (partesDMS[1].toUpperCase().includes('W') || partesDMS[1].toUpperCase().includes('O')) { x = c2; y = c1; } 
-                    else { y = c1; x = c2; } 
-
-                    try {
-                        var res = proj4(epsgIn, epsgOut, [x, y]);
-                        outX = res[0].toFixed(casasDec); // Usa PONTO para decimal
-                        outY = res[1].toFixed(casasDec); // Usa PONTO para decimal
-                    } catch(e) {}
+            var getProjStr = (fmt, datum, prefix) => {
+                var projDatum = datumsDef[datum];
+                if(fmt === 'utm') {
+                    var zona = document.getElementById(`conv-zona-${prefix}`).value || 23;
+                    var hemi = document.getElementById(`conv-hemi-${prefix}`).value === 'S' ? '+south ' : '';
+                    return `+proj=utm +zone=${zona} ${hemi}${projDatum} +units=m +no_defs`;
                 }
-            } else {
-                var partes = l.split(/[\t;,]+/);
-                var nums = [];
-                partes.forEach(p => {
-                    var n = parseFloat(p.trim().replace(',', '.'));
-                    if(!isNaN(n)) nums.push(n);
+                return `+proj=longlat ${projDatum} +no_defs`;
+            };
+
+            var epsgIn = getProjStr(fmtIn, datumIn, 'in');
+            var epsgOut = getProjStr(fmtOut, datumOut, 'out');
+
+            // Separa o texto em blocos (polígonos separados por linha em branco)
+            var blocos = txtIn.split(/\n\s*\n/);
+            var outLinesAll = [];
+
+            blocos.forEach(bloco => {
+                var linhas = bloco.split('\n');
+                var outBloco = [];
+
+                linhas.forEach(linha => {
+                    var l = linha.trim();
+                    if(!l) return; // Ignora linhas vazias
+
+                    var outX = null, outY = null;
+
+                    // Tratamento de conversão
+                    if (fmtIn === 'sgl') {
+                        var partesDMS = l.match(/(\d+[^\d]+\d+[^\d]+[\d.,]+[^\d]*[NSWE]?)/gi);
+                        if (partesDMS && partesDMS.length >= 2) {
+                            var c1 = parseDMS(partesDMS[0]); var c2 = parseDMS(partesDMS[1]);
+                            var x, y;
+                            if (partesDMS[0].toUpperCase().includes('W') || partesDMS[0].toUpperCase().includes('O')) { x = c1; y = c2; } 
+                            else if (partesDMS[1].toUpperCase().includes('W') || partesDMS[1].toUpperCase().includes('O')) { x = c2; y = c1; } 
+                            else { y = c1; x = c2; } 
+
+                            try {
+                                var res = proj4(epsgIn, epsgOut, [x, y]);
+                                outX = res[0].toFixed(casasDec);
+                                outY = res[1].toFixed(casasDec);
+                            } catch(e) {}
+                        }
+                    } else {
+                        var partes = l.split(/[\t;,]+/);
+                        var nums = [];
+                        partes.forEach(p => {
+                            var n = parseFloat(p.trim().replace(',', '.'));
+                            if(!isNaN(n)) nums.push(n);
+                        });
+
+                        if(nums.length >= 2) {
+                            try {
+                                var res = proj4(epsgIn, epsgOut, [nums[0], nums[1]]);
+                                outX = res[0].toFixed(casasDec);
+                                outY = res[1].toFixed(casasDec);
+                            } catch(e) {}
+                        }
+                    }
+
+                    // PADRÃO EXATO SIG-RI: "Longitude, Latitude" (sem o ; aqui)
+                    if (outX !== null && outY !== null) {
+                        outBloco.push(`${outX}, ${outY}`);
+                    }
                 });
 
-                if(nums.length >= 2) {
-                    try {
-                        var res = proj4(epsgIn, epsgOut, [nums[0], nums[1]]);
-                        outX = res[0].toFixed(casasDec); // Usa PONTO para decimal
-                        outY = res[1].toFixed(casasDec); // Usa PONTO para decimal
-                    } catch(e) {}
+                // Fechamento automático
+                if (outBloco.length >= 3) {
+                    var primeiraCoord = outBloco[0];
+                    var ultimaCoord = outBloco[outBloco.length - 1];
+                    if (primeiraCoord !== ultimaCoord) {
+                        outBloco.push(primeiraCoord);
+                    }
                 }
-            }
 
-            // PADRÃO EXATO SIG-RI: "Longitude, Latitude" (sem o ; aqui)
-            if (outX !== null && outY !== null) {
-                outBloco.push(`${outX}, ${outY}`);
-            }
-        });
+                // Junta as coordenadas do polígono com Ponto e Vírgula (;)
+                if (outBloco.length > 0) {
+                    outLinesAll.push(outBloco.join(';\n'));
+                }
+            });
 
-        // Fechamento automático: Se a última coordenada não for igual à primeira, repete a primeira
-        if (outBloco.length >= 3) {
-            var primeiraCoord = outBloco[0];
-            var ultimaCoord = outBloco[outBloco.length - 1];
-            if (primeiraCoord !== ultimaCoord) {
-                outBloco.push(primeiraCoord);
-            }
+            document.getElementById('conv-texto-out').value = outLinesAll.join('\n\n');
+            mostrarToast("Formatado para o padrão SIG-RI!");
         }
-
-        // Junta as coordenadas do polígono com Ponto e Vírgula (;). 
-        // O comando .join() garante que o último item NÃO terá o ";" no final!
-        if (outBloco.length > 0) {
-            outLinesAll.push(outBloco.join(';\n'));
-        }
-    });
-
-    document.getElementById('conv-texto-out').value = outLinesAll.join('\n\n');
-    mostrarToast("Formatado para o padrão SIG-RI!");
-}
 
         function checkToolButtons() { atualizarBotoesUndoRedo(); }
         setInterval(checkToolButtons, 1000); 
